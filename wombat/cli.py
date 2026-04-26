@@ -300,8 +300,44 @@ def integrate(mode: str, method: str) -> None:
 
 @cli.command("score-decidua")
 def score_decidua() -> None:
-    """Compute decidualization scores across all modules."""
-    console.print("[yellow]score-decidua: not yet implemented[/yellow]")
+    """Compute decidualization scores across all 8 modules."""
+    from pathlib import Path
+
+    import anndata as ad
+
+    from src.scoring.engine import score_all_modules
+    from src.scoring.gene_sets import load_score_gene_sets
+    from src.scoring.reports import generate_score_report
+
+    project_root = Path(__file__).resolve().parent.parent
+    backbone_path = project_root / "results" / "orthologs" / "backbone.parquet"
+    integrated_path = project_root / "results" / "integrated" / "stromal_harmony.h5ad"
+    report_dir = project_root / "results" / "reports" / "scoring"
+
+    if not integrated_path.exists():
+        console.print("[red]Integrated data not found — run 'wombat integrate' first[/red]")
+        raise SystemExit(1)
+
+    console.print("[blue]Loading integrated data...[/blue]")
+    adata = ad.read_h5ad(integrated_path)
+    gene_sets = load_score_gene_sets()
+
+    console.print(f"[blue]Scoring {len(gene_sets)} modules...[/blue]")
+    species = adata.obs["species"].iloc[0] if "species" in adata.obs.columns else "human"
+    bp = backbone_path if backbone_path.exists() else None
+    adata = score_all_modules(adata, gene_sets, species=species, backbone_path=bp)
+
+    # Save scored object
+    scored_path = project_root / "results" / "scored" / "stromal_scored.h5ad"
+    scored_path.parent.mkdir(parents=True, exist_ok=True)
+    adata.write_h5ad(scored_path)
+    console.print(f"[green]✓ Scored: {scored_path}[/green]")
+
+    # Generate reports
+    console.print("[blue]Generating scoring report...[/blue]")
+    score_cols = list(gene_sets.keys())
+    generate_score_report(adata, score_cols, report_dir)
+    console.print(f"[green]✓ Report: {report_dir}[/green]")
 
 
 # ---------------------------------------------------------------------------
