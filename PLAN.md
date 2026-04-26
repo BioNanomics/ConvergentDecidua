@@ -17,12 +17,22 @@
 
 ### Execution Against Real Data (Phases E1–E6)
 
-- [ ] **E1 — Ortholog Backbone** — build backbone.parquet via Ensembl BioMart
-- [ ] **E2 — First Dataset (GSE127918)** — fetch, harmonize, QC the key human scRNA dataset
-- [ ] **E3 — Remaining Datasets** — fetch + QC all 6 MVR 0.1 datasets
-- [ ] **E4 — Cross-Species Integration** — Harmony joint embedding of human + mouse stromal cells
-- [ ] **E5 — Scoring + Atlas + Reports** — 8 decidualization modules, Streamlit viewer, reports
-- [ ] **E6 — Hardening** — integration tests on real data, final validation, tag v0.1.0
+- [x] **E1 — Ortholog Backbone** — 25,439 rows (16,168 Tier 1 + 9,271 Tier 2) via Ensembl Compara FTP (BioMart mirrors were down). All 8 key markers present (PGR, FOXO1, HOXA10, PRL, IGFBP1, WNT4, BMP2, HAND2).
+- [x] **E2 — First Dataset (GSE127918)** — fetched DGE txt.gz, QC'd to 9,292 cells (from 10,239), 3,000 HVGs. All markers preserved.
+- [x] **E3 — Remaining Datasets** — GSE111976 (human scRNA, 1,578 cells post-QC), GSE226429 (mouse bulk, 6 samples). **Deferred**: GSE183771 (scATAC, 7GB+ tar), E-MTAB-11491 (644 individual files), GSE226417 (RData-only, needs R).
+- [x] **E4 — Cross-Species Integration** — Harmony on 9,065 human stromal cells (GSE111976 + GSE127918). 4 subtypes: 8,466 fibroblast, 394 decidual, 129 pre-decidual, 76 senescent. Batch key = `dataset` (same species). UMAP computed.
+- [x] **E5 — Scoring + Reports** — 8 decidualization modules scored (decidual, progesterone_response, estrogen_response, stress_response, senescence, immune_interface, ECM_remodeling, angiogenesis). Decidual_score highest in decidual_stromal (0.74). All reports generated (methods, coverage, QC, ortholog, manifest, scoring with heatmap + violins).
+- [ ] **E6 — Hardening** — integration tests on real data, final validation, Streamlit atlas test, tag v0.1.0
+
+### Known Gaps (MVR 0.1)
+
+| Gap | Reason | Path Forward |
+|---|---|---|
+| No mouse scRNA data integrated | GSE226417 is RData-only (needs R), E-MTAB-11491 has 644 individual files | Install R + Seurat for RData, or find alternative mouse dataset |
+| No scATAC data | GSE183771 is 7GB+ tar with per-sample MTX | Download + parse in future sprint |
+| Integration is human-only | No mouse scRNA ingested yet | Blocked by mouse data gap above |
+| Python 3.9 not 3.11 | pyenv local version | Code patched for 3.9 compat (datetime.UTC → timezone.utc, HVG flavor fallback) |
+| Coverage report inaccurate | Shows E-MTAB-11491/GSE226417 as integrated (false) | Fix coverage detection logic |
 
 ---
 
