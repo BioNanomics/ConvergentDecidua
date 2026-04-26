@@ -143,7 +143,56 @@ def _fetch_one(ds: dict, raw_dir: object) -> list:
 @click.option("--species", required=True, help="Species to QC (human or mouse).")
 def qc(species: str) -> None:
     """Run quality control on processed datasets."""
-    console.print(f"[yellow]qc: not yet implemented (species={species})[/yellow]")
+    from pathlib import Path
+
+    from wombat.config import load_config
+
+    datasets = load_config("datasets")
+    project_root = Path(__file__).resolve().parent.parent
+    targets = [d for d in datasets if d["species"] == species]
+
+    if not targets:
+        console.print(f"[red]No datasets found for species: {species}[/red]")
+        raise SystemExit(1)
+
+    for ds in targets:
+        acc = ds["accession"]
+        h5ad_path = project_root / "results" / "processed" / f"{acc}.h5ad"
+        qc_path = project_root / "results" / "qc" / f"{acc}.h5ad"
+
+        if qc_path.exists():
+            console.print(f"[dim]Skipping QC for {acc} — already done[/dim]")
+            continue
+
+        if not h5ad_path.exists():
+            console.print(f"[yellow]Skipping {acc} — not yet fetched[/yellow]")
+            continue
+
+        console.print(f"[blue]Running QC on {acc} ({ds['assay']})...[/blue]")
+        import anndata as ad
+
+        adata = ad.read_h5ad(h5ad_path)
+        assay = ds["assay"].lower()
+
+        if "scrna" in assay or "snrna" in assay:
+            from src.qc.scrna import qc_scrna
+
+            adata = qc_scrna(adata, species=species)
+        elif "scatac" in assay:
+            from src.qc.scatac import qc_scatac
+
+            adata = qc_scatac(adata)
+        elif "bulk" in assay:
+            from src.qc.bulk import qc_bulk
+
+            adata = qc_bulk(adata)
+        else:
+            console.print(f"[yellow]  No QC pipeline for assay: {ds['assay']}[/yellow]")
+            continue
+
+        qc_path.parent.mkdir(parents=True, exist_ok=True)
+        adata.write_h5ad(qc_path)
+        console.print(f"[green]  ✓ {qc_path} ({adata.n_obs} cells)[/green]")
 
 
 # ---------------------------------------------------------------------------
