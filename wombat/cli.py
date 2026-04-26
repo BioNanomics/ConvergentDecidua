@@ -341,6 +341,46 @@ def score_decidua() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Reports command
+# ---------------------------------------------------------------------------
+
+
+@cli.command("generate-reports")
+def generate_reports() -> None:
+    """Generate all pipeline reports and release manifest."""
+    from pathlib import Path
+
+    from src.reports.coverage import generate_coverage_report
+    from src.reports.manifest import generate_manifest
+    from src.reports.methods import generate_methods_report
+    from src.reports.ortholog_report import generate_ortholog_report
+    from src.reports.qc_report import generate_qc_report
+
+    project_root = Path(__file__).resolve().parent.parent
+    results_dir = project_root / "results"
+    report_dir = results_dir / "reports"
+
+    console.print("[blue]Generating reports...[/blue]")
+
+    generate_methods_report(report_dir / "methods.md")
+    console.print("[green]  ✓ Methods report[/green]")
+
+    generate_coverage_report(results_dir, report_dir / "coverage.md")
+    console.print("[green]  ✓ Coverage report[/green]")
+
+    generate_qc_report(results_dir, report_dir / "qc_summary.md")
+    console.print("[green]  ✓ QC report[/green]")
+
+    generate_ortholog_report(results_dir, report_dir / "orthologs.md")
+    console.print("[green]  ✓ Ortholog report[/green]")
+
+    generate_manifest(results_dir, report_dir / "manifest.md")
+    console.print("[green]  ✓ Release manifest[/green]")
+
+    console.print(f"[green]All reports → {report_dir}/[/green]")
+
+
+# ---------------------------------------------------------------------------
 # Atlas command
 # ---------------------------------------------------------------------------
 
