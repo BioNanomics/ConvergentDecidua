@@ -1,10 +1,16 @@
-README.md
+# ConvergentDecidua
 
-* **Repo:** `ConvergentDecidua`
-* **CLI / command:** `wombat`
-* **Phase 2 AI layer:** `DeciduaAI`
-* **Database:** `DeciduaForge`
-* **Visualization layer:** `DecidualAtlas`
+> A reproducible comparative atlas for the evolution of decidualization.
+
+| Component | Name |
+|---|---|
+| **Repo** | `ConvergentDecidua` |
+| **CLI** | `wombat` |
+| **AI layer** | `DeciduaAI` (Phase 2) |
+| **Database** | `DeciduaForge` (Phase 3) |
+| **Visualization** | `DecidualAtlas` (Phase 4) |
+
+**Current milestone**: [MVR 0.1](PLAN.md) — human + mouse atlas foundation.
 
 Core public anchors include human cycle scRNA/scATAC datasets like GSE127918 and GSE183771, mouse decidualization datasets, and AI tools such as scGPT, Geneformer, LINGER, and Enformer. GSE127918 maps human stromal decidual trajectories by single-cell RNA-seq, while GSE183771 profiles human endometrial chromatin accessibility across the menstrual cycle. ([NCBI][1])
 
@@ -26,51 +32,6 @@ The project should produce:
 6. sequence-level candidate regulatory elements,
 7. ranked convergence hypotheses,
 8. a database and visualization layer.
-
----
-
-# 0. Repository identity
-
-## Repo name
-
-```text
-ConvergentDecidua
-```
-
-## Tagline
-
-```text
-A reproducible comparative atlas for the evolution of decidualization.
-```
-
-## CLI command
-
-```bash
-wombat
-```
-
-Example:
-
-```bash
-wombat fetch
-wombat build-registry
-wombat qc
-wombat integrate
-wombat score-decidua
-wombat infer-grn
-wombat find-convergence
-wombat serve-atlas
-```
-
-## Internal components
-
-```text
-ConvergentDecidua/
-  wombat/              # CLI and workflow orchestration
-  decidua_ai/          # Phase 2 model layer
-  decidua_forge/       # database layer
-  decidual_atlas/      # visualization app
-```
 
 ---
 
@@ -664,209 +625,38 @@ validation priority
 
 ---
 
-# 14. Subticket breakdown
+# 14. Implementation plan
 
-## Epic A — Project skeleton
+See [PLAN.md](PLAN.md) for the phased implementation plan, dependency graph, MVR 0.1 dataset selections, and per-epic step breakdowns.
 
-```text
-A1. Create repo structure
-A2. Add pyproject.toml
-A3. Add Dockerfile
-A4. Add Snakemake skeleton
-A5. Implement wombat CLI
-A6. Add CI with lint/test
-```
+### Epic summary
 
-## Epic B — Dataset registry
-
-```text
-B1. Create datasets.yaml schema
-B2. Add human datasets
-B3. Add mouse datasets
-B4. Add bat datasets
-B5. Add spiny mouse resources
-B6. Build registry validator
-B7. Export registry CSV/Parquet
-```
-
-## Epic C — Data ingestion
-
-```text
-C1. GEO downloader
-C2. ArrayExpress/BioStudies downloader
-C3. SRA manifest downloader
-C4. Genome FASTA/GTF downloader
-C5. Processed matrix importer
-C6. AnnData writer
-C7. Raw-data fallback hooks
-```
-
-## Epic D — Metadata harmonization
-
-```text
-D1. Normalize species names
-D2. Normalize assay names
-D3. Normalize cycle stages
-D4. Normalize pregnancy/decidualization states
-D5. Normalize donor/sample metadata
-D6. Create metadata audit report
-```
-
-## Epic E — QC
-
-```text
-E1. scRNA QC
-E2. scATAC QC
-E3. bulk RNA QC
-E4. sample-level QC dashboards
-E5. doublet detection wrapper
-E6. pseudobulk generation
-```
-
-## Epic F — Orthologs and synteny
-
-```text
-F1. Ensembl ortholog fetcher
-F2. g:Profiler cross-check
-F3. OrthoDB fallback
-F4. strict one-to-one ortholog backbone
-F5. orthogroup table
-F6. syntenic-window extractor
-F7. spiny mouse reciprocal-BLAST fallback
-```
-
-## Epic G — Cell-state harmonization
-
-```text
-G1. Human cell annotation
-G2. Mouse cell annotation
-G3. Bat cell annotation
-G4. Stromal-only subset builder
-G5. Cross-species ontology
-G6. scANVI label transfer
-G7. leave-one-species-out validation
-```
-
-## Epic H — Scoring
-
-```text
-H1. Decidual marker score
-H2. Progesterone-response score
-H3. Estrogen-response score
-H4. Stress-response score
-H5. Senescence score
-H6. Immune-interface score
-H7. ECM-remodeling score
-H8. score reports
-```
-
-## Epic I — DeciduaAI
-
-```text
-I1. scVI integration runner
-I2. scGPT embedding runner
-I3. Geneformer regulator-prioritization runner
-I4. GENIE3 GRN baseline
-I5. LINGER GRN runner
-I6. Enformer sequence scorer
-I7. Borzoi sequence scorer
-I8. model-output normalizer
-I9. candidate rank aggregator
-```
-
-## Epic J — Convergence engine
-
-```text
-J1. gene-level convergence scoring
-J2. regulon-level convergence scoring
-J3. motif-level convergence scoring
-J4. TE-family enrichment
-J5. sequence-swap scoring
-J6. mouse-outgroup contrast
-J7. permutation testing
-J8. final candidate leaderboard
-```
-
-## Epic K — DeciduaForge
-
-```text
-K1. database schema
-K2. SQLAlchemy models
-K3. migrations
-K4. dataset loader
-K5. gene/ortholog loader
-K6. score loader
-K7. GRN edge loader
-K8. candidate loader
-K9. query API
-```
-
-## Epic L — DecidualAtlas
-
-```text
-L1. Streamlit/Dash skeleton
-L2. dataset browser
-L3. species comparison view
-L4. cell-state embedding view
-L5. gene explorer
-L6. GRN explorer
-L7. candidate evidence cards
-L8. convergence leaderboard
-```
-
-## Epic M — Reports and reproducibility
-
-```text
-M1. automated methods report
-M2. dataset coverage report
-M3. QC report
-M4. ortholog mapping report
-M5. model benchmark report
-M6. convergence report
-M7. release artifact manifest
-```
+| Epic | Scope | MVR |
+|---|---|---|
+| A | Project skeleton (repo, pyproject, Docker, Snakemake, CLI, CI) | 0.1 |
+| B | Dataset registry | 0.1 |
+| C | Data ingestion | 0.1 |
+| D | Metadata harmonization | 0.1 |
+| E | QC | 0.1 |
+| F | Orthologs and synteny | 0.1 |
+| G | Cell-state harmonization | 0.1 |
+| H | Scoring | 0.1 |
+| I | DeciduaAI model runners | 0.3 |
+| J | Convergence engine | 0.3 |
+| K | DeciduaForge database | 1.0 |
+| L | DecidualAtlas visualization | 0.1 (baseline), 1.0 (full) |
+| M | Reports and reproducibility | 0.1 (baseline), 1.0 (full) |
 
 ---
 
-# 15. Minimum viable release
+# 15. Minimum viable releases
 
-## MVR 0.1
-
-```text
-Human + mouse only
-processed matrices
-ortholog backbone
-stromal cell-state harmonization
-decidualization scoring
-baseline DecidualAtlas
-```
-
-## MVR 0.2
-
-```text
-Add bat
-add spiny mouse genome
-add sequence windows
-add GRN baseline
-```
-
-## MVR 0.3
-
-```text
-Add DeciduaAI
-run scGPT/Geneformer/GENIE3/Enformer
-produce ranked convergence candidates
-```
-
-## MVR 1.0
-
-```text
-DeciduaForge database
-DecidualAtlas web app
-full reproducible workflow
-candidate evidence cards
-paper-style report
-```
+| Release | Scope |
+|---|---|
+| **MVR 0.1** | Human + mouse, processed matrices, ortholog backbone, stromal cell-state harmonization, decidualization scoring, baseline atlas |
+| **MVR 0.2** | Add bat, spiny mouse genome, sequence windows, GRN baseline |
+| **MVR 0.3** | Add DeciduaAI (scGPT/Geneformer/GENIE3/Enformer), ranked convergence candidates |
+| **MVR 1.0** | DeciduaForge database, full DecidualAtlas, reproducible workflow, candidate evidence cards, paper-style report |
 
 ---
 

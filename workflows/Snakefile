@@ -1,0 +1,15 @@
+"""Snakemake workflow for ConvergentDecidua MVR 0.1."""
+
+configfile: "configs/datasets.yaml"
+
+
+include: "rules/fetch.smk"
+include: "rules/qc.smk"
+include: "rules/orthologs.smk"
+include: "rules/integrate.smk"
+include: "rules/reports.smk"
+
+
+rule all:
+    input:
+        "results/registry.parquet",
