@@ -123,13 +123,22 @@ def _run_harmony(adata: ad.AnnData) -> None:
     try:
         import harmonypy
 
+        # Use 'dataset' as batch key if multiple datasets, 'species' if multi-species
+        n_species = adata.obs["species"].nunique()
+        batch_key = "species" if n_species > 1 else "dataset"
+        logger.info("Harmony batch key: %s (%d unique)", batch_key, adata.obs[batch_key].nunique())
+
         ho = harmonypy.run_harmony(
             adata.obsm["X_pca"],
             adata.obs,
-            "species",
+            batch_key,
             max_iter_harmony=20,
         )
-        adata.obsm["X_pca_harmony"] = ho.Z_corr.T
+        corrected = ho.Z_corr.T
+        # Ensure shape matches (n_cells, n_pcs)
+        if corrected.shape[0] != adata.n_obs:
+            corrected = ho.Z_corr if ho.Z_corr.shape[0] == adata.n_obs else corrected.T
+        adata.obsm["X_pca_harmony"] = corrected
         logger.info("Harmony integration complete")
     except ImportError:
         logger.warning("harmonypy not installed — falling back to uncorrected PCA")
