@@ -81,10 +81,25 @@ def _load_from_dir(raw_dir: Path) -> ad.AnnData:
         logger.info("Loading 10X h5: %s", h5_files[0])
         return ad.read_10x_h5(h5_files[0])
 
-    # Priority 4: CSV/TSV count matrix
-    csv_files = list(raw_dir.glob("*counts*.csv*")) + list(raw_dir.glob("*counts*.tsv*"))
+    # Priority 4: CSV/TSV count matrix (count, dge, expression, etc.)
+    csv_patterns = ["*counts*", "*dge*", "*expression*", "*UMI*"]
+    csv_files = []
+    for pat in csv_patterns:
+        csv_files.extend(raw_dir.glob(f"{pat}.csv*"))
+        csv_files.extend(raw_dir.glob(f"{pat}.tsv*"))
+        csv_files.extend(raw_dir.glob(f"{pat}.txt*"))
     if csv_files:
-        return _load_csv_counts(csv_files[0])
+        if len(csv_files) == 1:
+            return _load_csv_counts(csv_files[0])
+        # Multiple count matrices — concatenate them
+        logger.info("Found %d count matrices, concatenating...", len(csv_files))
+        adatas = []
+        for f in sorted(csv_files):
+            a = _load_csv_counts(f)
+            # Tag cells with source file for traceability
+            a.obs["source_file"] = f.name
+            adatas.append(a)
+        return ad.concat(adatas, join="outer")
 
     msg = f"No recognized data format found in {raw_dir}"
     raise FileNotFoundError(msg)
@@ -115,7 +130,11 @@ def _load_csv_counts(path: Path) -> ad.AnnData:
     """Load a CSV/TSV count matrix (genes × cells or cells × genes)."""
     logger.info("Loading count matrix from %s", path)
 
-    sep = "\t" if ".tsv" in path.name else ","
+    # DGE and txt files are typically tab-separated; CSV files use comma
+    if ".csv" in path.name:
+        sep = ","
+    else:
+        sep = "\t"
     opener = gzip.open if path.name.endswith(".gz") else open
     with opener(path, "rt") as fh:
         df = pd.read_csv(fh, sep=sep, index_col=0)

@@ -51,7 +51,7 @@ def fetch_geo_dataset(
         raise ValueError(msg)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    prefix = accession[:5]
+    prefix = accession[:-3]  # GSE127918 → GSE127
 
     # Try to list supplementary files via directory listing
     supp_url = GEO_SUPP_URL.format(prefix=prefix, accession=accession)
