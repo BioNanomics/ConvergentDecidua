@@ -17,6 +17,13 @@ logger = logging.getLogger(__name__)
 
 BIOMART_URL = "https://www.ensembl.org/biomart/martservice"
 
+# Fallback mirrors in case primary is down
+_BIOMART_MIRRORS = [
+    "https://www.ensembl.org/biomart/martservice",
+    "https://useast.ensembl.org/biomart/martservice",
+    "https://asia.ensembl.org/biomart/martservice",
+]
+
 # BioMart dataset names per species
 _DATASETS = {
     "human": "hsapiens_gene_ensembl",
@@ -95,16 +102,38 @@ def fetch_ensembl_orthologs(
             logger.info("Loading cached Ensembl orthologs from %s", cache_path)
             return pq.read_table(cache_path)
 
-    # Build and send query
+    # Build and send query — try mirrors on failure
     xml = _build_query_xml(_DATASETS[source], _ORTHOLOG_ATTRS[target])
-    logger.info("Querying Ensembl BioMart for %s→%s orthologs...", source, target)
 
-    resp = requests.get(BIOMART_URL, params={"query": xml}, timeout=300)
-    resp.raise_for_status()
+    resp = None
+    last_error = None
+    for mirror_url in _BIOMART_MIRRORS:
+        logger.info("Querying BioMart (%s) for %s→%s orthologs...", mirror_url, source, target)
+        try:
+            r = requests.get(mirror_url, params={"query": xml}, timeout=300)
+            r.raise_for_status()
+            if r.text.startswith("Query ERROR"):
+                last_error = RuntimeError(f"BioMart query error: {r.text[:500]}")
+                logger.warning("Mirror %s returned error, trying next...", mirror_url)
+                continue
+            resp = r
+            break  # success
+        except requests.RequestException as exc:
+            last_error = exc
+            logger.warning("Mirror %s failed: %s", mirror_url, exc)
+            continue
 
-    if resp.text.startswith("Query ERROR"):
-        msg = f"BioMart query error: {resp.text[:500]}"
-        raise RuntimeError(msg)
+    if resp is None:
+        logger.warning("All BioMart mirrors failed. Falling back to Ensembl Compara FTP...")
+        table = _fetch_compara_ftp(source, target)
+        logger.info("Retrieved %d ortholog rows from Compara FTP", len(table))
+
+        if cache_dir is not None:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            pq.write_table(table, cache_path)
+            logger.info("Cached to %s", cache_path)
+
+        return table
 
     # Parse TSV response
     table = _parse_biomart_response(resp.text, source, target)
@@ -185,3 +214,93 @@ def _find_column(fieldnames: list[str], *keywords: str) -> str:
             return col
     msg = f"Could not find column matching keywords: {keywords} in {fieldnames}"
     raise KeyError(msg)
+
+
+# Ensembl Compara FTP — pre-built ortholog tables (fallback when BioMart is down)
+_COMPARA_FTP = "https://ftp.ensembl.org/pub/current_tsv/ensembl-compara/homologies"
+
+_COMPARA_SPECIES = {
+    "human": "homo_sapiens",
+    "mouse": "mus_musculus",
+}
+
+
+def _fetch_compara_ftp(source: str, target: str) -> pa.Table:
+    """Download pre-built ortholog table from Ensembl Compara FTP.
+
+    The Compara FTP provides TSV files with all homology types. We filter
+    for the target species and return the same schema as BioMart.
+    """
+    import gzip
+    import io
+
+    import requests
+
+    src_species = _COMPARA_SPECIES.get(source)
+    tgt_species = _COMPARA_SPECIES.get(target)
+    if not src_species or not tgt_species:
+        msg = f"Unknown species for Compara FTP: {source} → {target}"
+        raise ValueError(msg)
+
+    # Download from target species directory (contains target→source mappings)
+    url = f"{_COMPARA_FTP}/{tgt_species}/"
+    logger.info("Listing Compara FTP directory: %s", url)
+    resp = requests.get(url, timeout=60)
+    resp.raise_for_status()
+
+    # Find the protein homology file
+    import re
+
+    matches = re.findall(r'href="(Compara\.\d+\.protein_default\.homologies\.tsv\.gz)"', resp.text)
+    if not matches:
+        msg = f"No Compara protein homology file found at {url}"
+        raise RuntimeError(msg)
+
+    file_url = f"{_COMPARA_FTP}/{tgt_species}/{matches[0]}"
+    logger.info("Downloading Compara orthologs from %s", file_url)
+    resp = requests.get(file_url, timeout=300, stream=True)
+    resp.raise_for_status()
+
+    # Decompress and parse — filter for source species
+    raw = gzip.decompress(resp.content)
+    reader = io.StringIO(raw.decode("utf-8"))
+
+    # TSV columns: gene_stable_id, protein_stable_id, species, identity,
+    #   homology_type, homology_gene_stable_id, homology_protein_stable_id,
+    #   homology_species, homology_identity, dn, ds, goc_score,
+    #   wga_coverage, is_high_confidence, homology_id
+    import csv
+
+    tsv_reader = csv.DictReader(reader, delimiter="\t")
+
+    source_ids = []
+    source_symbols = []  # Compara doesn't have symbols — filled later
+    target_ids = []
+    target_symbols = []
+    orth_types = []
+    confidences = []
+
+    for row in tsv_reader:
+        if row.get("homology_species") != src_species:
+            continue
+
+        target_ids.append(row["gene_stable_id"])
+        target_symbols.append("")  # Compara TSV doesn't include gene symbols
+        source_ids.append(row["homology_gene_stable_id"])
+        source_symbols.append("")
+        orth_types.append(row.get("homology_type", ""))
+        conf = row.get("is_high_confidence", "0")
+        confidences.append(int(conf) if conf.isdigit() else 0)
+
+    logger.info("Parsed %d %s→%s ortholog rows from Compara", len(source_ids), source, target)
+
+    return pa.table(
+        {
+            f"{source}_gene_id": source_ids,
+            f"{source}_symbol": source_symbols,
+            f"{target}_gene_id": target_ids,
+            f"{target}_symbol": target_symbols,
+            "orthology_type": orth_types,
+            "confidence": confidences,
+        }
+    )
