@@ -40,6 +40,12 @@ def qc_bulk(
     p = {**DEFAULT_PARAMS, **(params or {})}
     logger.info("Starting bulk RNA QC: %d samples × %d genes", adata.n_obs, adata.n_vars)
 
+    # Ensure X is dense for bulk (small matrix) or at least csr
+    import scipy.sparse
+
+    if scipy.sparse.issparse(adata.X):
+        adata.X = np.asarray(adata.X.todense())
+
     # Filter low-count samples
     sample_counts = np.asarray(adata.X.sum(axis=1)).flatten()
     keep_samples = sample_counts >= p["min_counts_per_sample"]
