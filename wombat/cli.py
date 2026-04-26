@@ -85,10 +85,58 @@ def build_registry() -> None:
 @click.option("--all-datasets", "fetch_all", is_flag=True, help="Fetch all priority datasets.")
 def fetch(dataset: str | None, fetch_all: bool) -> None:
     """Download datasets and convert to standardized AnnData."""
+    from pathlib import Path
+
+    from wombat.config import load_config
+
     if not dataset and not fetch_all:
         console.print("[red]Specify --dataset <accession> or --all-datasets.[/red]")
         raise SystemExit(1)
-    console.print(f"[yellow]fetch: not yet implemented (dataset={dataset})[/yellow]")
+
+    datasets = load_config("datasets")
+    project_root = Path(__file__).resolve().parent.parent
+
+    if fetch_all:
+        targets = datasets
+    else:
+        targets = [d for d in datasets if d["accession"] == dataset]
+        if not targets:
+            console.print(f"[red]Unknown dataset: {dataset}[/red]")
+            raise SystemExit(1)
+
+    for ds in targets:
+        acc = ds["accession"]
+        raw_dir = project_root / "results" / "raw" / acc
+        h5ad_path = project_root / "results" / "processed" / f"{acc}.h5ad"
+
+        if h5ad_path.exists():
+            console.print(f"[dim]Skipping {acc} — already processed[/dim]")
+            continue
+
+        console.print(f"[blue]Fetching {acc} ({ds['source']})...[/blue]")
+        _fetch_one(ds, raw_dir)
+
+        console.print(f"[blue]Converting {acc} → h5ad...[/blue]")
+        from src.ingest.anndata_writer import to_anndata
+
+        to_anndata(raw_dir, ds, h5ad_path)
+        console.print(f"[green]  ✓ {h5ad_path}[/green]")
+
+
+def _fetch_one(ds: dict, raw_dir: object) -> list:
+    """Route download to the correct backend based on accession prefix."""
+    acc = ds["accession"]
+    if acc.startswith("GSE"):
+        from src.ingest.geo import fetch_geo_dataset
+
+        return fetch_geo_dataset(acc, raw_dir)
+    elif acc.startswith("E-MTAB"):
+        from src.ingest.arrayexpress import fetch_arrayexpress_dataset
+
+        return fetch_arrayexpress_dataset(acc, raw_dir)
+    else:
+        msg = f"No downloader for accession prefix: {acc}"
+        raise ValueError(msg)
 
 
 @cli.command()
