@@ -8,10 +8,10 @@
 - [x] **Phase 4 — Metadata Harmonization** (Epic D)
 - [x] **Phase 5 — QC** (Epic E)
 - [x] **Phase 6 — Ortholog Mapping** (Epic F) *(parallel with 3–5)*
-- [ ] **Phase 7 — Cell-State Harmonization & Integration** (Epic G)
-- [ ] **Phase 8 — Decidualization Scoring** (Epic H)
-- [ ] **Phase 9 — Baseline DecidualAtlas** (Epic L)
-- [ ] **Phase 10 — Reports & Release** (Epic M)
+- [x] **Phase 7 — Cell-State Harmonization & Integration** (Epic G)
+- [x] **Phase 8 — Decidualization Scoring** (Epic H)
+- [x] **Phase 9 — Baseline DecidualAtlas** (Epic L)
+- [x] **Phase 10 — Reports & Release** (Epic M)
 
 ---
 
