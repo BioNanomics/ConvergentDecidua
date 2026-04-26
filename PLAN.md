@@ -2,16 +2,27 @@
 
 ## Status
 
+### Code Written (Phases 1–10)
+
 - [x] **Phase 1 — Project Skeleton** (Epic A)
 - [x] **Phase 2 — Configuration & Dataset Registry** (Epics B + D)
-- [x] **Phase 3 — Data Ingestion** (Epic C)
-- [x] **Phase 4 — Metadata Harmonization** (Epic D)
-- [x] **Phase 5 — QC** (Epic E)
-- [x] **Phase 6 — Ortholog Mapping** (Epic F) *(parallel with 3–5)*
-- [x] **Phase 7 — Cell-State Harmonization & Integration** (Epic G)
-- [x] **Phase 8 — Decidualization Scoring** (Epic H)
-- [x] **Phase 9 — Baseline DecidualAtlas** (Epic L)
-- [x] **Phase 10 — Reports & Release** (Epic M)
+- [x] **Phase 3 — Data Ingestion** (Epic C) — *code only, never fetched real data*
+- [x] **Phase 4 — Metadata Harmonization** (Epic D) — *tested on synthetic data only*
+- [x] **Phase 5 — QC** (Epic E) — *tested on synthetic data only*
+- [x] **Phase 6 — Ortholog Mapping** (Epic F) — *code only, never called BioMart*
+- [x] **Phase 7 — Cell-State Harmonization & Integration** (Epic G) — *code only, no real h5ad*
+- [x] **Phase 8 — Decidualization Scoring** (Epic H) — *tested on synthetic data only*
+- [x] **Phase 9 — Baseline DecidualAtlas** (Epic L) — *scaffold only, no data to display*
+- [x] **Phase 10 — Reports & Release** (Epic M) — *templates only, no real data*
+
+### Execution Against Real Data (Phases E1–E6)
+
+- [ ] **E1 — Ortholog Backbone** — build backbone.parquet via Ensembl BioMart
+- [ ] **E2 — First Dataset (GSE127918)** — fetch, harmonize, QC the key human scRNA dataset
+- [ ] **E3 — Remaining Datasets** — fetch + QC all 6 MVR 0.1 datasets
+- [ ] **E4 — Cross-Species Integration** — Harmony joint embedding of human + mouse stromal cells
+- [ ] **E5 — Scoring + Atlas + Reports** — 8 decidualization modules, Streamlit viewer, reports
+- [ ] **E6 — Hardening** — integration tests on real data, final validation, tag v0.1.0
 
 ---
 

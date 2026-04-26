@@ -138,9 +138,11 @@ def _parse_biomart_response(text: str, source: str, target: str) -> pa.Table:
     fieldnames = reader.fieldnames or []
 
     # Map BioMart response columns to our standard names
-    target_gene_id_col = _find_column(fieldnames, "homolog", "gene", "stable")
-    target_symbol_col = _find_column(fieldnames, "homolog", "gene", "name")
-    orthology_type_col = _find_column(fieldnames, "orthology", "type")
+    # BioMart returns e.g. "Mouse gene stable ID", "Mouse gene name",
+    # "Mouse homology type", "Mouse orthology confidence [0 low, 1 high]"
+    target_gene_id_col = _find_column(fieldnames, "mouse", "gene", "stable")
+    target_symbol_col = _find_column(fieldnames, "mouse", "gene", "name")
+    orthology_type_col = _find_column(fieldnames, "homology", "type")
     confidence_col = _find_column(fieldnames, "confidence")
 
     source_ids = []
