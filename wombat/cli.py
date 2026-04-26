@@ -206,9 +206,26 @@ def orthologs() -> None:
 
 
 @orthologs.command("build")
-def orthologs_build() -> None:
+@click.option("--no-gprofiler", is_flag=True, help="Skip g:Profiler cross-validation.")
+def orthologs_build(no_gprofiler: bool) -> None:
     """Build ortholog backbone and orthogroup tables."""
-    console.print("[yellow]orthologs build: not yet implemented[/yellow]")
+    from pathlib import Path
+
+    from src.orthologs.backbone import build_backbone
+
+    project_root = Path(__file__).resolve().parent.parent
+    cache_dir = project_root / "results" / "orthologs" / "cache"
+    output_path = project_root / "results" / "orthologs" / "backbone.parquet"
+
+    console.print("[blue]Building ortholog backbone (human → mouse)...[/blue]")
+    backbone = build_backbone(
+        source="human",
+        target="mouse",
+        cache_dir=cache_dir,
+        output_path=output_path,
+        use_gprofiler=not no_gprofiler,
+    )
+    console.print(f"[green]✓ Backbone: {len(backbone)} rows → {output_path}[/green]")
 
 
 # ---------------------------------------------------------------------------
