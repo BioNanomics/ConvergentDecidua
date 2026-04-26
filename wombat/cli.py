@@ -55,7 +55,24 @@ def validate_config() -> None:
 @cli.command("build-registry")
 def build_registry() -> None:
     """Export dataset registry to Parquet and CSV."""
-    console.print("[yellow]build-registry: not yet implemented[/yellow]")
+    from pathlib import Path
+
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from wombat.config import load_config
+
+    datasets = load_config("datasets")
+    table = pa.Table.from_pylist(datasets)
+
+    out_dir = Path(__file__).resolve().parent.parent / "results"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    pq.write_table(table, out_dir / "registry.parquet")
+    table.to_pandas().to_csv(out_dir / "registry.csv", index=False)
+    console.print(
+        f"[green]Registry exported: {len(datasets)} datasets → results/registry.parquet, results/registry.csv[/green]"
+    )
 
 
 # ---------------------------------------------------------------------------

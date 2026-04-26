@@ -1,0 +1,144 @@
+# Marker gene sets for ConvergentDecidua
+# See README.md §8 (cell-state ontology) and §9 (scoring modules).
+# Human gene symbols — map to other species via ortholog backbone.
+
+cell_type_markers:
+  stromal_fibroblast:
+    - VIM
+    - COL1A1
+    - COL3A1
+    - DCN
+    - THY1
+  pre_decidual_stromal:
+    - PGR
+    - HOXA10
+    - HAND2
+    - WNT4
+    - FOXO1
+  decidual_stromal:
+    - PRL
+    - IGFBP1
+    - IL15
+    - FOXO1
+    - LEFTY2
+    - SST
+  senescent_decidual:
+    - CDKN1A
+    - CDKN2A
+    - IL6
+    - IL8
+    - SERPINE1
+    - TP53
+  perivascular:
+    - ACTA2
+    - TAGLN
+    - RGS5
+    - MYH11
+  epithelial_glandular:
+    - EPCAM
+    - KRT18
+    - MUC1
+    - PAEP
+    - GPX3
+  epithelial_luminal:
+    - EPCAM
+    - KRT18
+    - MUC1
+    - FOXJ1
+  endothelial:
+    - PECAM1
+    - VWF
+    - CDH5
+    - FLT1
+  immune_uNK:
+    - NCAM1
+    - CD56
+    - KLRB1
+    - GNLY
+    - GZMB
+  macrophage:
+    - CD68
+    - CD163
+    - CSF1R
+    - MARCO
+  T_cell:
+    - CD3D
+    - CD3E
+    - CD4
+    - CD8A
+  other: []
+
+score_gene_sets:
+  decidual_score:
+    - PRL
+    - IGFBP1
+    - IL15
+    - FOXO1
+    - LEFTY2
+    - SST
+    - WNT4
+    - BMP2
+    - HAND2
+
+  progesterone_response_score:
+    - PGR
+    - FKBP5
+    - SGK1
+    - ZBTB16
+    - ERRFI1
+    - STC1
+    - DUSP1
+
+  estrogen_response_score:
+    - ESR1
+    - GREB1
+    - TFF1
+    - PGR
+    - MYC
+    - CCND1
+
+  stress_response_score:
+    - HSPA1A
+    - HSPA1B
+    - HSP90AA1
+    - DNAJB1
+    - BAG3
+    - GADD45A
+    - DDIT3
+
+  senescence_score:
+    - CDKN1A
+    - CDKN2A
+    - TP53
+    - RB1
+    - SERPINE1
+    - IL6
+    - IL8
+    - MMP3
+
+  immune_interface_score:
+    - IL15
+    - CXCL12
+    - CXCL14
+    - CCL2
+    - IL33
+    - CSF1
+
+  ECM_remodeling_score:
+    - MMP2
+    - MMP9
+    - MMP14
+    - TIMP1
+    - TIMP3
+    - COL4A1
+    - FN1
+    - LAMA4
+
+  angiogenesis_score:
+    - VEGFA
+    - VEGFC
+    - FLT1
+    - KDR
+    - ANGPT1
+    - ANGPT2
+    - TEK

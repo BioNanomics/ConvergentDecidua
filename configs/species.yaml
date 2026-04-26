@@ -1,0 +1,20 @@
+# Species configuration for ConvergentDecidua
+# MVR 0.1: human + mouse only
+
+- name: human
+  common_name: Human
+  taxon_id: 9606
+  genome_build: GRCh38
+  ensembl_release: 112
+  gene_id_prefix: ENSG
+  menstruates: true
+  spontaneous_decidualization: true
+
+- name: mouse
+  common_name: House mouse
+  taxon_id: 10090
+  genome_build: GRCm39
+  ensembl_release: 112
+  gene_id_prefix: ENSMUSG
+  menstruates: false
+  spontaneous_decidualization: false

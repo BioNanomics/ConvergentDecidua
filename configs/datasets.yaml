@@ -1,0 +1,81 @@
+# Dataset registry for ConvergentDecidua
+# MVR 0.1: human (3 datasets) + mouse (3 datasets)
+# See README.md §3 for the full target list.
+
+- accession: GSE111976
+  species: human
+  tissue: endometrium
+  assay: scRNA-seq
+  condition: natural_menstrual_cycle
+  spontaneous_decidualization: true
+  menstruates: true
+  role: discovery
+  priority: high
+  source: GEO
+  expected_format: h5ad
+  description: Human endometrium across natural menstrual cycle
+
+- accession: GSE127918
+  species: human
+  tissue: endometrium
+  assay: scRNA-seq
+  condition: decidualization_timecourse
+  spontaneous_decidualization: true
+  menstruates: true
+  role: discovery
+  priority: high
+  source: GEO
+  expected_format: h5ad
+  description: Decidual pathway / stromal trajectory
+
+- accession: GSE183771
+  species: human
+  tissue: endometrium
+  assay: scATAC-seq
+  condition: menstrual_cycle_chromatin
+  spontaneous_decidualization: true
+  menstruates: true
+  role: discovery
+  priority: high
+  source: GEO
+  expected_format: h5ad
+  description: Chromatin accessibility across menstrual cycle
+
+- accession: E-MTAB-11491
+  species: mouse
+  tissue: uterus
+  assay: scRNA-seq
+  condition: cycling_decidualizing
+  spontaneous_decidualization: false
+  menstruates: false
+  role: outgroup
+  priority: high
+  source: ArrayExpress
+  expected_format: h5ad
+  description: Cycling and decidualizing mouse FRT
+
+- accession: GSE226417
+  species: mouse
+  tissue: uterus
+  assay: scRNA-seq
+  condition: early_pregnancy_decidua
+  spontaneous_decidualization: false
+  menstruates: false
+  role: outgroup
+  priority: high
+  source: GEO
+  expected_format: h5ad
+  description: Early pregnancy decidua / uterus
+
+- accession: GSE226429
+  species: mouse
+  tissue: uterus
+  assay: bulk-RNA-seq
+  condition: in_vitro_decidualization
+  spontaneous_decidualization: false
+  menstruates: false
+  role: outgroup
+  priority: high
+  source: GEO
+  expected_format: counts
+  description: In vitro decidualization time course
