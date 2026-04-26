@@ -1,5 +1,20 @@
 # ConvergentDecidua — MVR 0.1 Implementation Plan
 
+## Status
+
+- [x] **Phase 1 — Project Skeleton** (Epic A)
+- [ ] **Phase 2 — Configuration & Dataset Registry** (Epics B + D)
+- [ ] **Phase 3 — Data Ingestion** (Epic C)
+- [ ] **Phase 4 — Metadata Harmonization** (Epic D)
+- [ ] **Phase 5 — QC** (Epic E)
+- [ ] **Phase 6 — Ortholog Mapping** (Epic F) *(parallel with 3–5)*
+- [ ] **Phase 7 — Cell-State Harmonization & Integration** (Epic G)
+- [ ] **Phase 8 — Decidualization Scoring** (Epic H)
+- [ ] **Phase 9 — Baseline DecidualAtlas** (Epic L)
+- [ ] **Phase 10 — Reports & Release** (Epic M)
+
+---
+
 ## Scope
 
 **MVR 0.1**: Human + mouse comparative decidualization atlas with processed matrices, ortholog backbone, stromal cell-state harmonization, decidualization scoring, and a baseline DecidualAtlas viewer.
