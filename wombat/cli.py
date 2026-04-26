@@ -235,9 +235,67 @@ def orthologs_build(no_gprofiler: bool) -> None:
 
 @cli.command()
 @click.option("--mode", default="stromal", help="Integration mode (e.g. stromal).")
-def integrate(mode: str) -> None:
+@click.option("--method", default="harmony", help="Integration method: harmony or scvi.")
+def integrate(mode: str, method: str) -> None:
     """Integrate datasets across species."""
-    console.print(f"[yellow]integrate: not yet implemented (mode={mode})[/yellow]")
+    from pathlib import Path
+
+    import anndata as ad
+
+    from src.cell_states.annotate import annotate_cell_types
+    from src.cell_states.integrate import integrate_stromal
+    from src.cell_states.subset import subset_stromal
+    from wombat.config import load_config
+
+    project_root = Path(__file__).resolve().parent.parent
+    backbone_path = project_root / "results" / "orthologs" / "backbone.parquet"
+    qc_dir = project_root / "results" / "qc"
+    out_path = project_root / "results" / "integrated" / f"{mode}_{method}.h5ad"
+
+    if not backbone_path.exists():
+        console.print("[red]Backbone not found — run 'wombat orthologs build' first[/red]")
+        raise SystemExit(1)
+
+    datasets = load_config("datasets")
+    stromal_list = []
+
+    for ds in datasets:
+        acc = ds["accession"]
+        qc_path = qc_dir / f"{acc}.h5ad"
+        if not qc_path.exists():
+            console.print(f"[yellow]Skipping {acc} — not QC'd[/yellow]")
+            continue
+
+        # Only scRNA-seq datasets for cell-state integration
+        if "scrna" not in ds["assay"].lower() and "snrna" not in ds["assay"].lower():
+            console.print(f"[dim]Skipping {acc} — not scRNA-seq[/dim]")
+            continue
+
+        console.print(f"[blue]Annotating {acc}...[/blue]")
+        adata = ad.read_h5ad(qc_path)
+        adata = annotate_cell_types(
+            adata,
+            species=ds["species"],
+            backbone_path=str(backbone_path),
+        )
+
+        if mode == "stromal":
+            adata = subset_stromal(adata)
+
+        if adata.n_obs > 0:
+            stromal_list.append(adata)
+            console.print(f"[green]  ✓ {acc}: {adata.n_obs} {mode} cells[/green]")
+
+    if not stromal_list:
+        console.print("[red]No datasets with qualifying cells[/red]")
+        raise SystemExit(1)
+
+    console.print(f"[blue]Integrating {len(stromal_list)} datasets ({method})...[/blue]")
+    integrated = integrate_stromal(stromal_list, backbone_path, method=method)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    integrated.write_h5ad(out_path)
+    console.print(f"[green]✓ Integrated: {integrated.n_obs} cells → {out_path}[/green]")
 
 
 @cli.command("score-decidua")
