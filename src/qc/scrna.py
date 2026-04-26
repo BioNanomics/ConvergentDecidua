@@ -87,8 +87,12 @@ def qc_scrna(
     sc.pp.normalize_total(adata, target_sum=1e4)
     sc.pp.log1p(adata)
 
-    # HVG selection
-    sc.pp.highly_variable_genes(adata, n_top_genes=3000, flavor="seurat_v3", layer="counts")
+    # HVG selection — use seurat_v3 if skmisc available, fall back to cell_ranger
+    try:
+        sc.pp.highly_variable_genes(adata, n_top_genes=3000, flavor="seurat_v3", layer="counts")
+    except (ImportError, ValueError):
+        logger.warning("seurat_v3 HVG failed, falling back to cell_ranger flavor")
+        sc.pp.highly_variable_genes(adata, n_top_genes=3000, flavor="cell_ranger")
     logger.info("Selected %d highly variable genes", adata.var["highly_variable"].sum())
 
     adata.obs["qc_passed"] = True
