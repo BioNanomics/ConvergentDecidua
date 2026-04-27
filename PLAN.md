@@ -40,7 +40,7 @@
 
 **MVR 0.1**: Human + mouse comparative decidualization atlas with processed matrices, ortholog backbone, stromal cell-state harmonization, decidualization scoring, and a baseline DecidualAtlas viewer.
 
-See [README.md](README.md) for the full scientific objective, dataset targets, data models, and long-term roadmap (MVR 0.2–1.0). See [docs/AI Phase Plan](docs/AI%20Phase%20Plan%20for%20Convergent%20Regulatory%20Changes%20in%20Spontaneous%20Decidualization.md) for the DeciduaAI model strategy and detailed implementation guidance.
+See [BACKGROUND.md](BACKGROUND.md) for the full scientific objective, dataset targets, data models, and long-term roadmap (MVR 0.2–1.0). See [docs/AI Phase Plan](docs/AI%20Phase%20Plan%20for%20Convergent%20Regulatory%20Changes%20in%20Spontaneous%20Decidualization.md) for the DeciduaAI model strategy and detailed implementation guidance.
 
 ---
 

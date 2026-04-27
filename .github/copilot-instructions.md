@@ -1,6 +1,6 @@
 ## Project Context
 
-This is **ConvergentDecidua** — a Python 3.11 bioinformatics project building a comparative decidualization atlas. See [README.md](../README.md) for the scientific objective, data models, and repo structure. See [PLAN.md](../PLAN.md) for the current implementation plan (MVR 0.1).
+This is **ConvergentDecidua** — a Python 3.11 bioinformatics project building a comparative decidualization atlas. See [BACKGROUND.md](../BACKGROUND.md) for the scientific objective, data models, and repo structure. See [PLAN.md](../PLAN.md) for the current implementation plan (MVR 0.1).
 
 ### Key conventions
 
