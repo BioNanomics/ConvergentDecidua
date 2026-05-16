@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: ConvergentDecidua
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+authors:
+  - name: BioNanomics
+repository-code: https://github.com/BioNanomics/ConvergentDecidua
+url: https://github.com/BioNanomics/ConvergentDecidua
+license: MIT
+version: 0.1.0
+date-released: "2026-05-16"
