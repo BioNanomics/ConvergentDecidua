@@ -138,7 +138,24 @@ workflows/       # Snakemake rules
 * **No sweeping edits**: Broad refactors or multi-module changes must be split or proposed as new components.
 * **Isolated improvements**: If a change grows complex, extract it into a new function, module, or component instead of modifying multiple areas.
 * **Direct requests only**: Large refactors or architectural shifts should only occur when explicitly requested.
- 
+
+## Command-line interface (CLI) guidelines
+When running long-running or potentially hanging commands, always capture output using a unique log file per process to avoid conflicts. If the output is disposable use this pattern:
+```bash
+LOGFILE=$(mktemp /tmp/logfile.XXXXXX)
+command 2>&1 | tee "$LOGFILE" | tail -30
+```
+where command is is just the main command (others could be chained with complex paramters and pipes)
+
+This ensures real-time visibility of the last 30 lines and preserves the complete output for inspection, while remaining safe for concurrent or parallel runs.
+
+If the output is important for debugging, ensure it is preserved and easily accessible. For example:
+```bash
+LOGFILE="logs/command_$(date +%Y%m%d_%H%M%S).log"
+command 2>&1 | tee "$LOGFILE" | tail -30
+```
+This approach timestamps the log file for easy identification and prevents overwriting logs from previous runs. 
+
 ### Code Quality Checklist
 - [ ] **DRY**: No code duplication - extracted reusable functions?
 - [ ] **KISS**: Simplest solution that works?
