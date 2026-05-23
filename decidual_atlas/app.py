@@ -131,7 +131,7 @@ def _page_species_comparison() -> None:
 
     # Side-by-side UMAPs
     col1, col2 = st.columns(2)
-    for sp, col in zip(["human", "mouse"], [col1, col2], strict=False):
+    for sp, col in zip(["human", "mouse"], [col1, col2]):
         subset = umap_df[umap_df["species"] == sp]
         with col:
             st.subheader(sp.capitalize())

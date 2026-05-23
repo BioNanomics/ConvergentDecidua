@@ -47,17 +47,21 @@ def generate_coverage_report(results_dir: Path, output_path: Path) -> pd.DataFra
         }
         records.append(record)
 
-    # Check if integrated/scored data exists
+    df = pd.DataFrame(records)
+
+    # Honestly detect which datasets actually contributed cells to the
+    # integrated / scored objects by reading .obs.dataset, rather than
+    # blanket-marking every scRNA dataset whenever the file exists.
     integrated_path = results_dir / "integrated" / "stromal_harmony.h5ad"
     scored_path = results_dir / "scored" / "stromal_scored.h5ad"
 
-    df = pd.DataFrame(records)
+    integrated_accessions = _accessions_in_h5ad(integrated_path)
+    if integrated_accessions is not None:
+        df["integrated"] = df["accession"].isin(integrated_accessions)
 
-    if integrated_path.exists():
-        df.loc[df["assay"].str.contains("scRNA|snRNA", case=False, na=False), "integrated"] = True
-
-    if scored_path.exists():
-        df.loc[df["assay"].str.contains("scRNA|snRNA", case=False, na=False), "scored"] = True
+    scored_accessions = _accessions_in_h5ad(scored_path)
+    if scored_accessions is not None:
+        df["scored"] = df["accession"].isin(scored_accessions)
 
     # Write report
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -71,3 +75,27 @@ def generate_coverage_report(results_dir: Path, output_path: Path) -> pd.DataFra
 
     logger.info("Coverage report → %s", output_path)
     return df
+
+
+def _accessions_in_h5ad(path: Path) -> set[str] | None:
+    """Return the set of dataset accessions present in an h5ad's ``.obs.dataset``.
+
+    Returns ``None`` when the file does not exist or cannot be read; returns an
+    empty set when the file exists but lacks the ``dataset`` column.
+    """
+    if not path.exists():
+        return None
+    try:
+        import anndata as ad
+
+        a = ad.read_h5ad(path, backed="r")
+        try:
+            if "dataset" not in a.obs.columns:
+                return set()
+            return set(a.obs["dataset"].astype(str).unique())
+        finally:
+            if getattr(a, "file", None) is not None:
+                a.file.close()
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Could not inspect %s for coverage detection: %s", path, exc)
+        return None

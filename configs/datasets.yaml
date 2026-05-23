@@ -66,6 +66,12 @@
   source: GEO
   expected_format: h5ad
   description: Early pregnancy decidua / uterus
+  # Seurat RData; requires R + Seurat (see docs/REPRODUCE.md). UE_DSC is the
+  # decidual stromal cell subset — our primary target population. UE_all is
+  # 7GB compressed and not needed for the stromal atlas.
+  ingest:
+    format: seurat_rdata
+    include: [UE_DSC]
 
 - accession: GSE226429
   species: mouse

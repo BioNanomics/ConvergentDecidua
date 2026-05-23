@@ -116,8 +116,8 @@ def _load_symbol_map(backbone_path: str, direction: str = "human_to_mouse") -> d
     tier1 = df[df["tier"] == 1]
 
     if direction == "human_to_mouse":
-        return dict(zip(tier1["source_symbol"], tier1["target_symbol"], strict=False))
-    return dict(zip(tier1["target_symbol"], tier1["source_symbol"], strict=False))
+        return dict(zip(tier1["source_symbol"], tier1["target_symbol"]))
+    return dict(zip(tier1["target_symbol"], tier1["source_symbol"]))
 
 
 import pandas as pd  # noqa: E402  — needed for pd.Index type in _prepare_gene_sets

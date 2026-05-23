@@ -107,7 +107,7 @@ def _map_genes(
         table = pq.read_table(backbone_path)
         df = table.to_pandas()
         tier1 = df[df["tier"] == 1]
-        h2m = dict(zip(tier1["source_symbol"], tier1["target_symbol"], strict=False))
+        h2m = dict(zip(tier1["source_symbol"], tier1["target_symbol"]))
         mapped = [h2m.get(g, g) for g in genes]
     else:
         mapped = list(genes)

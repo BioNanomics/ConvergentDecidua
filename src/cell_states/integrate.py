@@ -102,7 +102,7 @@ def _subset_to_backbone_genes(
 
 def _remap_mouse_genes(adata: ad.AnnData, tier1: pd.DataFrame) -> ad.AnnData:
     """Remap mouse gene symbols to human orthologs via backbone."""
-    mouse_to_human = dict(zip(tier1["target_symbol"], tier1["source_symbol"], strict=False))
+    mouse_to_human = dict(zip(tier1["target_symbol"], tier1["source_symbol"]))
 
     # Filter to genes with orthologs
     has_ortholog = [g for g in adata.var_names if g in mouse_to_human]

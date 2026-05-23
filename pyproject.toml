@@ -59,6 +59,12 @@ known-first-party = ["wombat", "src", "decidual_atlas"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# real_data tests need real artifacts in results/ and are skipped by default.
+# Run them explicitly with: pytest -m real_data
+addopts = "-m 'not real_data'"
+markers = [
+    "real_data: tests that require real datasets in results/ (skipped in CI by default)",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["wombat"]

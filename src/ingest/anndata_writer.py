@@ -30,7 +30,8 @@ def to_anndata(
     raw_dir : Path
         Directory containing downloaded files for one dataset.
     dataset_meta : dict
-        Entry from datasets.yaml for this dataset.
+        Entry from datasets.yaml for this dataset. ``dataset_meta.get('ingest')``
+        may carry per-dataset ingest options (e.g. ``format: seurat_rdata``).
     output_path : Path
         Where to write the output h5ad.
 
@@ -39,7 +40,7 @@ def to_anndata(
     ad.AnnData
         The loaded and annotated AnnData object.
     """
-    adata = _load_from_dir(raw_dir)
+    adata = _load_from_dir(raw_dir, dataset_meta=dataset_meta)
 
     # Attach dataset metadata to .uns
     adata.uns["dataset"] = {
@@ -62,8 +63,31 @@ def to_anndata(
     return adata
 
 
-def _load_from_dir(raw_dir: Path) -> ad.AnnData:
-    """Auto-detect format and load AnnData from a directory."""
+def _load_from_dir(raw_dir: Path, dataset_meta: dict | None = None) -> ad.AnnData:
+    """Auto-detect format and load AnnData from a directory.
+
+    If ``dataset_meta['ingest']['format'] == 'seurat_rdata'``, the Seurat
+    RData bridge is used (requires R + Seurat; see ``docs/REPRODUCE.md``).
+    """
+    ingest_cfg = (dataset_meta or {}).get("ingest") or {}
+    fmt = ingest_cfg.get("format")
+
+    # Explicit Seurat RData route
+    if fmt == "seurat_rdata" or list(raw_dir.glob("*.RData*")):
+        rdata_files = list(raw_dir.glob("*.RData")) + list(raw_dir.glob("*.RData.gz"))
+        if rdata_files:
+            from src.ingest.seurat_rdata import rdata_dir_to_anndata
+
+            include = ingest_cfg.get("include")
+            object_name = ingest_cfg.get("object_name")
+            work_root = raw_dir / "_rdata_export"
+            return rdata_dir_to_anndata(
+                raw_dir,
+                work_root,
+                include=include,
+                object_name=object_name,
+            )
+
     # Priority 1: existing h5ad
     h5ad_files = list(raw_dir.glob("*.h5ad")) + list(raw_dir.glob("**/*.h5ad"))
     if h5ad_files:
