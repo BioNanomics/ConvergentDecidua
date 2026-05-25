@@ -1,271 +1,345 @@
-# ConvergentDecidua — MVR 0.1 Implementation Plan
+# ConvergentDecidua — Plan (Single Source of Truth)
 
-## Status
+> **This file is the single source of truth for project planning.** All
+> agents (Copilot, future contributors) read and update this file. Do not
+> maintain parallel plans in chat memory, session notes, or other files —
+> mirror back here when the plan changes.
 
-### Code Written (Phases 1–10)
+## TL;DR
 
-- [x] **Phase 1 — Project Skeleton** (Epic A)
-- [x] **Phase 2 — Configuration & Dataset Registry** (Epics B + D)
-- [x] **Phase 3 — Data Ingestion** (Epic C) — *code only, never fetched real data*
-- [x] **Phase 4 — Metadata Harmonization** (Epic D) — *tested on synthetic data only*
-- [x] **Phase 5 — QC** (Epic E) — *tested on synthetic data only*
-- [x] **Phase 6 — Ortholog Mapping** (Epic F) — *code only, never called BioMart*
-- [x] **Phase 7 — Cell-State Harmonization & Integration** (Epic G) — *code only, no real h5ad*
-- [x] **Phase 8 — Decidualization Scoring** (Epic H) — *tested on synthetic data only*
-- [x] **Phase 9 — Baseline DecidualAtlas** (Epic L) — *scaffold only, no data to display*
-- [x] **Phase 10 — Reports & Release** (Epic M) — *templates only, no real data*
+One reproducible human–mouse decidualization atlas paper in 12 months.
 
-### Execution Against Real Data (Phases E1–E6)
+- **Q1 done (May 2026)**: mouse scRNA flows end-to-end via R/Seurat bridge;
+  20,549 joint stromal cells (11,484 mouse + 9,065 human) Harmony-integrated
+  and scored. Reproducibility floor in place (honest coverage report,
+  sha256 manifest, real_data tests, REPRODUCE.md, Docker image verified).
+- **Q2 in progress**: fix mouse marker recall (49% → ≥80%), CI green, joint
+  integration upgrade, human scATAC.
+- **Q3**: bulk-data score validation, permutation null + FDR, conserved /
+  divergent module classification, candidate-regulator shortlists.
+- **Q4**: figures, Zenodo DOI, external repro test, preprint, submission.
 
-- [x] **E1 — Ortholog Backbone** — 25,439 rows (16,168 Tier 1 + 9,271 Tier 2) via Ensembl Compara FTP (BioMart mirrors were down). All 8 key markers present (PGR, FOXO1, HOXA10, PRL, IGFBP1, WNT4, BMP2, HAND2).
-- [x] **E2 — First Dataset (GSE127918)** — fetched DGE txt.gz, QC'd to 9,292 cells (from 10,239), 3,000 HVGs. All markers preserved.
-- [x] **E3 — Remaining Datasets** — GSE111976 (human scRNA, 1,578 cells post-QC), GSE226429 (mouse bulk, 6 samples). **Deferred**: GSE183771 (scATAC, 7GB+ tar), E-MTAB-11491 (644 individual files), GSE226417 (RData-only, needs R).
-- [x] **E4 — Cross-Species Integration** — Harmony on 9,065 human stromal cells (GSE111976 + GSE127918). 4 subtypes: 8,466 fibroblast, 394 decidual, 129 pre-decidual, 76 senescent. Batch key = `dataset` (same species). UMAP computed.
-- [x] **E5 — Scoring + Reports** — 8 decidualization modules scored (decidual, progesterone_response, estrogen_response, stress_response, senescence, immune_interface, ECM_remodeling, angiogenesis). Decidual_score highest in decidual_stromal (0.74). All reports generated (methods, coverage, QC, ortholog, manifest, scoring with heatmap + violins).
-- [ ] **E6 — Hardening** — integration tests on real data, final validation, Streamlit atlas test, tag v0.1.0
+## Revised priorities for Q2 (based on Q1 findings)
 
-### Known Gaps (MVR 0.1)
+1. **Mouse stromal recall (49%) is the next blocker** — was Q3, promoted
+   to Q2.1. Root cause: PRL family + other human markers without 1:1
+   mouse orthologs silently drop during human→mouse symbol mapping.
+2. **Pre-existing lint debt** breaks the "CI green" reproducibility
+   promise. Clean in Q2.2 (~5 errors total).
+3. **Python version policy** — Q1 hit 5 `zip(strict=...)` Py3.10+ bugs.
+   Decide in Q2 whether to bump `requires-python` to `>=3.10` (recommended)
+   or pin to 3.9 properly with a CI matrix.
 
-| Gap | Reason | Path Forward |
+## Locked decisions (do not relitigate)
+
+- Mouse unblock: R/Seurat bridge for GSE226417 (done).
+- scATAC included (human-only, GSE183771).
+- Candidate regulators: conserved + divergent lists, both labeled.
+- Target venue: flexible; decide month 9 (GigaScience vs Scientific Data).
+- **Out of scope**: DeciduaAI, Enformer, scGPT, Geneformer, LINGER, GENIE3,
+  bat / spiny mouse, PostgreSQL (DeciduaForge), spatial, perturbation,
+  ChIP-seq, FASTQ→counts, cross-species ATAC, novel GRN inference,
+  foundation-model fine-tuning. Future thesis chapters.
+
+---
+
+## Q1 (months 1–3) — Unblock mouse + reproducibility floor — ✅ DONE
+
+- [x] R/Seurat tooling layer (`docker/Dockerfile`, `scripts/rdata_to_h5ad.R`)
+  — Seurat 5 `layer=` API with Seurat 4 `slot=` fallback.
+- [x] Ingest GSE226417 via `src/ingest/seurat_rdata.py` shim; route in
+  `src/ingest/anndata_writer.py::_load_from_dir`; `configs/datasets.yaml`
+  declares `ingest: {format: seurat_rdata, include: [UE_DSC]}`.
+- [x] Mouse QC pass — 23,794 → 23,471 cells (clean upstream data).
+- [ ] Mouse metadata harmonization + marker overrides — **deferred to Q2.1**
+  (this is what causes the 49% stromal recall).
+- [x] Fix `src/reports/coverage.py` — derived from `.obs.dataset`, not file
+  existence. Verified no more false positives.
+- [x] Release-manifest checksums (`src/reports/manifest.py` already had
+  sha256/bytes/mtime; verified, no change needed).
+- [x] Real-data smoke tests (`tests/test_real_data.py` + `real_data`
+  pytest marker, skipped in CI by default).
+- [x] `docs/REPRODUCE.md` — external-runnable walkthrough; both local
+  (Homebrew R + Seurat) and Docker paths verified.
+- [x] Committed and pushed to `main` (commits `b502ef5`, `d773a89`).
+
+### Q1 exit criteria — all met
+
+- [x] `wombat integrate --mode stromal` h5ad contains both species
+  (`{human, mouse}`).
+- [x] `pytest -m real_data` green (4/4 incl. `test_integrated_includes_mouse`).
+- [x] Coverage report row count matches files on disk.
+- [x] Every file in `results/` has a sha256 in `manifest.csv`.
+
+### Q1 findings that reshape Q2–Q4
+
+- 🔴 Only ~49% of UE_DSC mouse cells pass the stromal annotation filter
+  despite being pre-curated decidual stromal cells. Cause: human markers
+  without 1:1 mouse orthologs (PRL family) silently drop.
+- 🟡 Python 3.9 is fragile: 5 `zip(strict=...)` bugs surfaced only when
+  real data hit the cross-species path.
+- 🟡 5 pre-existing lint errors (`UP017`, `SIM108`, `F841`) still red.
+- 🟢 R/Seurat bridge architecture works; reusable for any future Seurat
+  RData input (E-MTAB-11491 could share it, with caveats).
+- 🟢 Docker reproducibility path verified; build context must be repo
+  root (`-f docker/Dockerfile .`).
+
+---
+
+## Q2 (months 4–6) — Fix mouse recall, harden floor, joint integration + scATAC
+
+**Goal:** Honest cross-species stromal embedding (mouse recall >80%) plus
+human scATAC linked to the same stromal cells. CI green end-to-end.
+
+### Q2.1 — Mouse marker recall (promoted from Q3, top priority)
+
+- [ ] Add `species_overrides` block to `configs/markers.yaml` for genes
+  without 1:1 orthologs (PRL → mouse `Prl8a2`, `Prl3c1`, `Prl3d1`; spot
+  check FOXO1, HOXA10, IGFBP1).
+- [ ] Extend `src/cell_states/annotate.py::_prepare_gene_sets` to consume
+  `species_overrides` (merge with backbone-mapped symbols before checking
+  membership in `adata.var_names`).
+- [ ] Extend `src/scoring/engine.py` likewise — the `decidual_score`
+  module loses signal in mouse without `Prl8a2`.
+- [ ] Re-run integration; verify mouse stromal yield ≥ 80% of UE_DSC cells.
+- [ ] Add `test_mouse_stromal_recall` to `tests/test_real_data.py`
+  asserting the threshold.
+
+> **Note:** partial Q2.1 implementation currently sits uncommitted in the
+> working tree (`configs/markers.yaml`, `src/cell_states/annotate.py`,
+> `src/scoring/engine.py`, `src/scoring/gene_sets.py`). Verify and commit
+> before continuing.
+
+### Q2.2 — Reproducibility floor: CI green (lint debt)
+
+- [ ] Fix pre-existing lint: `UP017` (`src/reports/manifest.py`,
+  `src/reports/methods.py`), `SIM108`
+  (`src/ingest/anndata_writer.py:172`), `F841`
+  (`src/orthologs/ensembl.py:122`).
+- [ ] Decide Python version policy: bump `requires-python = ">=3.10"`
+  (recommended — eliminates the `strict=` class of bugs and matches the
+  ruff `target-version = "py311"`), OR add a CI matrix that proves 3.9
+  works.
+- [ ] Verify CI workflow under `.github/workflows/` actually runs ruff +
+  pytest + `wombat validate-config` on PRs.
+
+### Q2.3 — Joint integration upgrade
+
+- [ ] Add `--orthology-tier {1,12}` flag to
+  `src/cell_states/integrate.py` so users can include Tier 2 orthogroups.
+  Default stays Tier 1.
+- [ ] Switch `batch_key` from `['species']` to `['species','dataset']`
+  so within-species batch effects (GSE111976 vs GSE127918) are also
+  corrected.
+- [ ] Save canonical output as `results/integrated/stromal_cross_species.h5ad`
+  (current `stromal_harmony.h5ad` becomes an alias for back-compat).
+- [ ] scVI path (`--method scvi`) — scaffold exists; just exercise it
+  once on the real data and snapshot QC.
+
+### Q2.4 — Integration QC report
+
+- [ ] LISI / kBET species-mixing scores via `harmonypy`/`scib-metrics`.
+- [ ] Per-cluster marker recovery table (PGR/Pgr, FOXO1/Foxo1,
+  IGFBP1/Igfbp1, decidual-prolactin family). Written to
+  `results/reports/integration_qc.md`.
+- [ ] Wire into `wombat generate-reports`.
+
+### Q2.5 — scATAC (GSE183771, human-only)
+
+- [ ] Finish `src/qc/scatac.py` — TSS enrichment, TF-IDF + LSI, doublet
+  filter. Produce per-cell AnnData.
+- [ ] Gene-activity matrix via Signac-style aggregation (or `episcanpy`).
+  No cross-species ATAC.
+- [ ] Co-embed with human stromal RNA via shared stromal markers.
+  Document as auxiliary evidence only.
+- [ ] **Scope cap:** if scATAC slips past month 6, push to Q3 stretch.
+  Do NOT extend Q2.
+
+### Q2.6 — Snakemake DAG cleanup (parallel, low effort)
+
+- [ ] `snakemake --dag | dot -Tsvg > docs/dag.svg` — verify graph
+  reflects reality (mouse rules connected, ortholog rule upstream of
+  integrate).
+- [ ] Add `snakemake -n` to CI smoke checks.
+
+### Q2.7 — Optional: more mouse cells
+
+- [ ] If Q2.1 still leaves mouse cell counts thin (<8K stromal
+  post-filter), add UE_EC subset to `configs/datasets.yaml` `include`.
+  **Do not** ingest UE_all (7 GB → memory pressure).
+- [ ] E-MTAB-11491 remains a Q3-stretch fallback only. Do not touch
+  unless blocking.
+
+### Q2 exit criteria
+
+- [ ] One joint h5ad with ≥80% mouse stromal recall vs UE_DSC.
+- [ ] `results/reports/integration_qc.md` shows non-trivial LISI mixing.
+- [ ] PGR/Pgr in same cluster; mouse decidual-prolactin family detected.
+- [ ] Human scATAC gene-activity object exists and recovers stromal markers.
+- [ ] `ruff check .` green; CI green on PRs.
+- [ ] `pytest -m real_data` still 4/4 plus the new recall test.
+
+---
+
+## Q3 (months 7–9) — Scoring validation + conserved/divergent modules
+
+**Goal:** Module-level conserved-vs-divergent calls with FDR, plus the
+conservative candidate-regulator shortlists. `species_overrides` moved
+earlier, so Q3 starts with statistically clean inputs.
+
+### Q3.1 — Bulk-data score validation
+
+- [ ] Score GSE226429 (mouse bulk in-vitro decidualization time course)
+  using same modules; show monotonic `decidual_score` vs. day.
+- [ ] Select one public **human** bulk decidualization series and add to
+  `configs/datasets.yaml`. Candidates: GSE4888 (Talbi 2006, in-vivo
+  cycle), GSE107844 (Lucas 2020, in-vitro), or newer if available.
+  Decide by late Q2.
+- [ ] Score human bulk; document monotonicity.
+
+### Q3.2 — Permutation null + FDR
+
+- [ ] Extend `src/scoring/engine.py` with shuffled-gene-set null
+  distributions per `(cell_state, species)`.
+- [ ] Emit per-module FDR alongside raw scores.
+- [ ] Smoke test on integrated h5ad.
+
+### Q3.3 — Conserved vs divergent classification
+
+- [ ] For each of 8 modules: classify as conserved / human-biased /
+  mouse-biased using effect size + FDR.
+- [ ] Write `results/reports/conservation_table.csv` + a markdown summary.
+
+### Q3.4 — Candidate regulator shortlists
+
+- [ ] New `src/cell_states/regulators.py`. Use a curated TF list
+  (AnimalTFDB or similar — pick in Q3.4 kickoff, do not invent).
+- [ ] Rank by (a) score correlation in decidual stromal cells in BOTH
+  species → **conserved** list; (b) human-only signal → **divergent**
+  list.
+- [ ] Cap each at ~25; document conservative thresholds.
+
+### Q3.5 — Atlas pages for results
+
+- [ ] Add Streamlit pages: Conservation table, Regulator browser. Reuse
+  existing patterns in `decidual_atlas/`. No new architecture.
+
+### Q3.6 — Venue decision checkpoint (month 9)
+
+- [ ] Compare artifact strength: data resource (Scientific Data) vs
+  atlas+methods (GigaScience). Pick one.
+- [ ] Draft `docs/manuscript_outline.md` against chosen venue's
+  requirements.
+
+### Q3 exit criteria
+
+- [ ] ≥1 conserved module at FDR < 0.05 in both species.
+- [ ] Score-vs-time monotonicity plot in report (mouse + human bulk).
+- [ ] Two regulator lists exported.
+- [ ] Venue chosen, outline drafted.
+
+---
+
+## Q4 (months 10–12) — Manuscript, data release, submission
+
+- [ ] `scripts/make_figures.py` — deterministic, seeded; writes every
+  paper figure from `results/`.
+- [ ] Zenodo / figshare release: archive `results/integrated/`,
+  `results/scored/`, `results/orthologs/`, `results/reports/` with
+  checksums and a DOI.
+- [ ] Tag `v1.0.0`; `pip install convergent-decidua && wombat --help`
+  from clean env; verify `CITATION.cff` content.
+- [ ] External reproducibility test: recruit one colleague to follow
+  `docs/REPRODUCE.md` on a fresh machine; fix anything that breaks.
+- [ ] Manuscript drafting — methods auto-generated by
+  `src/reports/methods.py`; biology + figures hand-written.
+- [ ] Preprint on bioRxiv.
+- [ ] Submission to chosen venue.
+
+### Q4 exit criteria
+
+- [ ] Preprint posted.
+- [ ] Submission acknowledged by chosen venue.
+- [ ] Zenodo DOI minted.
+- [ ] GitHub release tagged.
+
+---
+
+## Risk register (updated after Q1)
+
+| Risk | Status | Mitigation |
 |---|---|---|
-| No mouse scRNA data integrated | GSE226417 is RData-only (needs R), E-MTAB-11491 has 644 individual files | Install R + Seurat for RData, or find alternative mouse dataset |
-| No scATAC data | GSE183771 is 7GB+ tar with per-sample MTX | Download + parse in future sprint |
-| Integration is human-only | No mouse scRNA ingested yet | Blocked by mouse data gap above |
-| Python 3.9 not 3.11 | pyenv local version | Code patched for 3.9 compat (datetime.UTC → timezone.utc, HVG flavor fallback) |
-| Coverage report inaccurate | Shows E-MTAB-11491/GSE226417 as integrated (false) | Fix coverage detection logic |
+| Mouse stromal recall too low (~49%) | 🔴 Active — promoted to Q2.1 | `species_overrides` for genes without 1:1 mouse orthologs |
+| Python 3.9 compat bugs | 🟡 Recurring | Q2.2: bump to `>=3.10` OR add CI matrix |
+| Pre-existing lint debt breaks "CI green" claim | 🟡 Recurring | Q2.2: fix the 5 errors |
+| scATAC slips into Q3 | 🟢 Acceptable | Capped to Q3 stretch; do not extend Q2 |
+| Human bulk validation dataset not selected | 🟡 Pending | Pick by end of Q2 |
+| Docker build cache invalidates on R upgrade | 🟢 Low | Multi-stage build if it becomes painful |
 
 ---
 
-## Scope
+## MVR 0.1 dataset registry
 
-**MVR 0.1**: Human + mouse comparative decidualization atlas with processed matrices, ortholog backbone, stromal cell-state harmonization, decidualization scoring, and a baseline DecidualAtlas viewer.
-
-See [BACKGROUND.md](BACKGROUND.md) for the full scientific objective, dataset targets, data models, and long-term roadmap (MVR 0.2–1.0). See [docs/AI Phase Plan](docs/AI%20Phase%20Plan%20for%20Convergent%20Regulatory%20Changes%20in%20Spontaneous%20Decidualization.md) for the DeciduaAI model strategy and detailed implementation guidance.
-
----
-
-## Decisions
-
-| Decision | Choice |
-|---|---|
-| Scope | MVR 0.1 — human + mouse only |
-| Python | 3.11, pure pip/uv (no conda) |
-| Workflow | Snakemake (migrate to Nextflow at scale) |
-| CLI framework | Click |
-| Data storage | Local filesystem + Git LFS; S3 fallback for impractically large files |
-| Database | DuckDB + Parquet for MVR 0.1 (PostgreSQL deferred to Phase 3) |
-| Testing | pytest |
-| CI | GitHub Actions (lint + test + config validation) |
-
-### MVR 0.1 Datasets
-
-| Accession | Species | Assay | Role |
-|---|---|---|---|
-| GSE111976 | Human | scRNA-seq | Endometrium across natural menstrual cycle |
-| GSE127918 | Human | scRNA-seq | Decidual pathway / stromal trajectory |
-| GSE183771 | Human | scATAC-seq | Chromatin accessibility across menstrual cycle |
-| E-MTAB-11491 | Mouse | scRNA-seq | Cycling and decidualizing mouse FRT |
-| GSE226417 | Mouse | scRNA-seq | Early pregnancy decidua / uterus |
-| GSE226429 | Mouse | bulk RNA-seq | In vitro decidualization time course |
-
-### Excluded from MVR 0.1
-
-Bat/spiny mouse data, DeciduaAI model runners (scGPT, Geneformer, GENIE3, LINGER, Enformer), GRN inference, sequence-level scoring, convergence engine, PostgreSQL (DeciduaForge), spatial data, perturbation datasets, ChIP-seq.
+| Accession | Species | Assay | Status | Role |
+|---|---|---|---|---|
+| GSE111976 | Human | scRNA-seq | ✅ integrated | Endometrium across natural menstrual cycle |
+| GSE127918 | Human | scRNA-seq | ✅ integrated | Decidual pathway / stromal trajectory |
+| GSE183771 | Human | scATAC-seq | Q2.5 | Chromatin accessibility across menstrual cycle |
+| E-MTAB-11491 | Mouse | scRNA-seq | Q3 stretch | Cycling and decidualizing mouse FRT (644 files) |
+| GSE226417 | Mouse | scRNA-seq | ✅ integrated (UE_DSC) | Early pregnancy decidua / uterus |
+| GSE226429 | Mouse | bulk RNA-seq | QC'd; scoring in Q3.1 | In vitro decidualization time course |
 
 ---
 
-## Dependency Graph
+## Appendix A — Module architecture reference
+
+This is the long-standing phase decomposition that maps source modules to
+responsibilities. Useful as orientation; the Q1–Q4 plan above is the
+operational priority list.
+
+### Module layout
+
+```text
+wombat/          # CLI + config loader (Click)
+src/             # Analysis modules
+  ingest/        # geo, arrayexpress, seurat_rdata, anndata_writer
+  metadata/      # harmonize, annotate, audit
+  qc/            # scrna, scatac, bulk, pseudobulk
+  orthologs/     # ensembl, gprofiler, backbone
+  cell_states/   # annotate, subset, integrate
+  scoring/       # engine, gene_sets, reports
+  reports/       # coverage, manifest, methods, qc_report, ortholog_report
+decidual_atlas/  # Streamlit visualization app
+configs/         # datasets.yaml, species.yaml, markers.yaml
+workflows/       # Snakemake rules (fetch, qc, orthologs, integrate, reports)
+scripts/         # standalone helpers (rdata_to_h5ad.R)
+```
+
+### Dependency graph
 
 ```mermaid
 graph LR
-    Skeleton[Phase 1: Skeleton] --> Configs[Phase 2: Configs]
-    Configs --> Ingest[Phase 3: Ingest]
-    Configs --> Orthologs[Phase 6: Orthologs]
-    Ingest --> Metadata[Phase 4: Metadata]
-    Metadata --> QC[Phase 5: QC]
-    QC --> CellStates[Phase 7: Cell States]
+    Configs --> Ingest
+    Configs --> Orthologs
+    Ingest --> Metadata --> QC
+    QC --> CellStates
     Orthologs --> CellStates
-    CellStates --> Scoring[Phase 8: Scoring]
-    Scoring --> Atlas[Phase 9: Atlas]
-    Atlas --> Reports[Phase 10: Reports]
-
-    classDef done fill:#4caf50,color:#fff
-    classDef active fill:#ff9800,color:#fff
-    classDef future fill:#e0e0e0,color:#333
+    CellStates --> Scoring --> Atlas
+    Atlas --> Reports
 ```
 
----
+### Design notes
 
-## Phase 1 — Project Skeleton (Epic A)
+- **Harmony vs scVI** — Harmony default (CPU-friendly). scVI via
+  `--method scvi` for GPU runs.
+- **Data storage** — Large h5ad/parquet in `results/` (gitignored). The
+  Snakemake workflow re-derives everything from downloads. Git LFS
+  configured in `.gitattributes` for any tracked binary files.
+- **Processed matrix availability** — Validate data availability early.
+  If a dataset lacks processed matrices, a FASTQ→count alignment step
+  is added (not currently needed for MVR 0.1).
 
-**Goal**: Installable Python package with CLI, CI, and repo structure.
+### Verification per quarter
 
-| Step | Deliverable | Details |
-|---|---|---|
-| A1 | Directory tree | All MVR 0.1 folders per README §4. Excludes `decidua_ai/`, `decidua_forge/`, `src/grn/`, `src/sequence/`, `src/convergence/` |
-| A2 | `pyproject.toml` | Package `convergent-decidua`, Python ≥3.11, deps (click, scanpy, anndata, muon, duckdb, pyarrow, pyyaml, rich, snakemake), optional groups `[dev]`/`[atlas]`/`[ingest]`, entry point `wombat`, ruff config |
-| A3 | `docker/Dockerfile` | `python:3.11-slim`, install from pyproject.toml |
-| A4 | Wombat CLI skeleton | Click group with stub subcommands: `init`, `validate-config`, `fetch`, `build-registry`, `qc`, `orthologs build`, `integrate`, `score-decidua`, `serve-atlas` |
-| A5 | `.github/workflows/ci.yml` | Lint (ruff), test (pytest), validate-configs on push/PR |
-| A6 | `.pre-commit-config.yaml` | ruff, check-yaml, check-toml, trailing-whitespace |
-
-**Verify**: `pip install -e ".[dev]"` succeeds, `wombat --help` lists all commands, `ruff check .` passes, `pytest` passes, CI green.
-
----
-
-## Phase 2 — Configuration & Dataset Registry (Epics B + D)
-
-**Goal**: Machine-readable configs and a validated dataset registry.
-
-| Step | Deliverable | Details |
-|---|---|---|
-| B1 | `configs/species.yaml` | Human + mouse entries (taxon_id, genome_build, ensembl_release, menstruates, spontaneous_decidualization) |
-| B2 | `configs/datasets.yaml` | 6 MVR 0.1 datasets with full schema |
-| B3 | `configs/markers.yaml` | Cell type markers (README §8) + 8 score gene sets (README §9) |
-| B4 | Config loader | `wombat/config.py` — `load_config(name)` with validation |
-| B5 | `wombat validate-config` | Loads all YAMLs, checks required keys, reports errors |
-| B6 | `wombat build-registry` | Exports to `results/registry.parquet` + CSV |
-
-**Verify**: `wombat validate-config` passes, registry export works, unit tests for malformed YAML.
-
----
-
-## Phase 3 — Data Ingestion (Epic C)
-
-**Goal**: Download processed matrices and convert to standardized AnnData.
-
-Strategy: **processed-matrix-first** (defer raw FASTQ remapping). See AI Phase Plan for fallback guidance.
-
-| Step | Deliverable | Details |
-|---|---|---|
-| C1 | `src/ingest/geo.py` | GEO downloader for GSE accessions → `results/raw/{accession}/` |
-| C2 | `src/ingest/arrayexpress.py` | ArrayExpress downloader for E-MTAB accessions |
-| C3 | `src/ingest/anndata_writer.py` | Convert any format → standardized h5ad with metadata from datasets.yaml |
-| C4 | `wombat fetch` wiring | Route by accession prefix, support `--all` |
-| C5 | `workflows/rules/fetch.smk` | Snakemake rules: download → h5ad for all 6 datasets |
-
-**Verify**: `wombat fetch --dataset GSE127918` produces h5ad, Snakemake dry-run works, unit tests with mocked HTTP.
-
----
-
-## Phase 4 — Metadata Harmonization (Epic D)
-
-**Goal**: Consistent `.obs` columns across all h5ad files.
-
-| Step | Deliverable | Details |
-|---|---|---|
-| D1 | `src/metadata/harmonize.py` | Normalize species, assay, cycle stage, donor/sample |
-| D2 | `src/metadata/annotate.py` | Apply harmonized columns to each h5ad |
-| D3 | `src/metadata/audit.py` | Metadata completeness report |
-
-**Verify**: All h5ad files have consistent `.obs` columns, no nulls in required fields.
-
----
-
-## Phase 5 — QC (Epic E)
-
-**Goal**: Filtered, normalized datasets with QC metrics. Runs **parallel with Phase 6**.
-
-| Step | Deliverable | Details |
-|---|---|---|
-| E1 | `src/qc/scrna.py` | Filter cells/genes, doublet detection, log-normalize, HVG. Params per AI Phase Plan (500+ genes, <15% mito) |
-| E2 | `src/qc/scatac.py` | TSS enrichment filter, TF-IDF + LSI |
-| E3 | `src/qc/bulk.py` | Low-count filter, normalize |
-| E4 | `src/qc/pseudobulk.py` | Aggregate by sample/donor/cell_type |
-| E5 | Snakemake rule + CLI | `wombat qc --species human\|mouse` |
-
-**Verify**: Filtered h5ad has fewer cells, `.obs` has QC columns, no empty datasets post-filter.
-
----
-
-## Phase 6 — Ortholog Mapping (Epic F)
-
-**Goal**: Human↔mouse ortholog tables. Depends only on Phase 2. Runs **parallel with Phases 3–5**.
-
-| Step | Deliverable | Details |
-|---|---|---|
-| F1 | `src/orthologs/ensembl.py` | BioMart REST API for human↔mouse 1:1 orthologs |
-| F2 | `src/orthologs/gprofiler.py` | Cross-validate with g:Orth, flag discrepancies |
-| F3 | `src/orthologs/backbone.py` | Tier 1 strict 1:1 → `results/orthologs/backbone.parquet` |
-| F4 | Orthogroup table | Tier 2 many-to-many → `results/orthologs/orthogroups.parquet` |
-| F5 | Snakemake rule + CLI | `wombat orthologs build` |
-
-**Verify**: ~16K–17K one-to-one pairs, key markers present (PGR, FOXO1, HOXA10, PRL, IGFBP1).
-
----
-
-## Phase 7 — Cell-State Harmonization & Integration (Epic G)
-
-**Goal**: Cross-species stromal embedding. Depends on Phases 5 + 6.
-
-| Step | Deliverable | Details |
-|---|---|---|
-| G1 | `src/cell_states/annotate.py` | Marker-based scoring using ontology (README §8) for human + mouse |
-| G2 | `src/cell_states/subset.py` | Extract 4 stromal subtypes per species |
-| G3 | `src/cell_states/integrate.py` | Map to ortholog backbone → Harmony (default) or scVI (`--method scvi`) → joint embedding |
-| G4 | Snakemake rule + CLI | `wombat integrate --mode stromal` |
-
-**Verify**: UMAP shows species mixing with biological signal, PRL/IGFBP1 mark decidual cluster, stromal subtypes recoverable in both species.
-
----
-
-## Phase 8 — Decidualization Scoring (Epic H)
-
-**Goal**: Per-cell and pseudobulk scores across 8 modules. Depends on Phase 7.
-
-| Step | Deliverable | Details |
-|---|---|---|
-| H1 | `src/scoring/engine.py` | Generic scoring via `scanpy.tl.score_genes`, species-mapped gene sets via ortholog backbone |
-| H2 | `src/scoring/gene_sets.py` | Load from `configs/markers.yaml`, implement all 8 scores (README §9) |
-| H3 | Apply scores | Score integrated stromal object + pseudobulk |
-| H4 | `src/scoring/reports.py` | Heatmaps and violins by cell state × species |
-| H5 | CLI | `wombat score-decidua` |
-
-**Verify**: Decidual_score highest in decidual_stromal, mouse shows lower spontaneous signal, distributions are biologically sensible.
-
----
-
-## Phase 9 — Baseline DecidualAtlas (Epic L)
-
-**Goal**: Interactive Streamlit viewer. Depends on Phase 8.
-
-| Step | Deliverable | Details |
-|---|---|---|
-| L1 | `decidual_atlas/app.py` | Multi-page Streamlit app with sidebar nav |
-| L2 | Dataset browser page | Registry table with filters |
-| L3 | Species comparison | Side-by-side UMAPs, score distributions |
-| L4 | Cell-state viewer | Interactive Plotly UMAP by type/species/score |
-| L5 | Gene explorer | Search by symbol, DuckDB on Parquet |
-| L6 | CLI | `wombat serve-atlas` → `streamlit run decidual_atlas/app.py` |
-
-**Verify**: App launches, all pages render with real data, gene search works.
-
----
-
-## Phase 10 — Reports & Release (Epic M)
-
-**Goal**: Automated documentation artifacts. Depends on all above.
-
-| Step | Deliverable |
-|---|---|
-| M1 | Methods report (auto-generated from workflow metadata) |
-| M2 | Dataset coverage report |
-| M3 | QC report |
-| M4 | Ortholog mapping report |
-| M5 | Release manifest with checksums |
-
----
-
-## Design Notes
-
-### Harmony vs scVI for integration
-
-Harmony is CPU-friendly and fast — default for MVR 0.1 local dev. scVI available via `--method scvi` for production GPU runs.
-
-### Data storage strategy
-
-Large h5ad/parquet files go in `results/` which is `.gitignore`'d. The Snakemake workflow re-derives everything from downloads. A data manifest tracks expected outputs for reproducibility. Git LFS is configured in `.gitattributes` for any tracked binary files.
-
-### Processed matrix availability
-
-Some GEO datasets may only have raw FASTQs. Phase 3 validates data availability early — if a core dataset lacks processed matrices, a FASTQ→count alignment step (Cell Ranger / STARsolo) is added.
+`pytest -q` green, `ruff check .` green, `snakemake -n` (dry-run) green,
+`wombat validate-config` green.

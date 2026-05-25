@@ -1,6 +1,19 @@
 ## Project Context
 
-This is **ConvergentDecidua** — a Python 3.11 bioinformatics project building a comparative decidualization atlas. See [BACKGROUND.md](../BACKGROUND.md) for the scientific objective, data models, and repo structure. See [PLAN.md](../PLAN.md) for the current implementation plan (MVR 0.1).
+This is **ConvergentDecidua** — a Python 3.11 bioinformatics project building a comparative decidualization atlas. See [BACKGROUND.md](../BACKGROUND.md) for the scientific objective, data models, and repo structure.
+
+### Planning — single source of truth
+
+[PLAN.md](../PLAN.md) at the repository root is the **single source of truth** for project planning, priorities, and progress. Always read PLAN.md at the start of a planning conversation and update it (in the same PR / commit) whenever the plan changes.
+
+**Do not** create or maintain parallel plans in:
+
+- `/memories/session/` (workspaceStorage session memory)
+- `/memories/repo/` or `/memories/` for plan content (these are for conventions, gotchas, and short-lived working notes — not the plan itself)
+- Ad-hoc `PLAN_*.md`, `ROADMAP.md`, or `TODO.md` files
+- Long-lived chat threads or scratchpads
+
+If you find yourself drafting a plan in session memory, stop and mirror it into PLAN.md instead. Session/repo memory may reference PLAN.md but must not duplicate or diverge from it.
 
 ### Key conventions
 
