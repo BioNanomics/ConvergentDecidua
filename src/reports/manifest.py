@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -52,9 +52,7 @@ def generate_manifest(results_dir: Path, output_path: Path) -> pd.DataFrame:
                         "size_bytes": stat.st_size,
                         "size_human": _human_size(stat.st_size),
                         "sha256": _sha256(path),
-                        "modified": datetime.fromtimestamp(
-                            stat.st_mtime, tz=timezone.utc
-                        ).isoformat(),
+                        "modified": datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
                     }
                 )
 
@@ -62,7 +60,7 @@ def generate_manifest(results_dir: Path, output_path: Path) -> pd.DataFrame:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as fh:
-        ts = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        ts = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
         fh.write(f"# Release Manifest\n\n*Generated: {ts}*\n\n")
         fh.write(f"**Total files**: {len(df)}\n\n")
         if len(df) > 0:

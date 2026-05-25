@@ -113,9 +113,13 @@ def _load_from_dir(raw_dir: Path, dataset_meta: dict | None = None) -> ad.AnnDat
         csv_files.extend(raw_dir.glob(f"{pat}.tsv*"))
         csv_files.extend(raw_dir.glob(f"{pat}.txt*"))
     # Exclude summary/metadata files — only keep large count matrices
-    csv_files = [f for f in csv_files if "summary" not in f.name.lower() and "readme" not in f.name.lower()]
+    csv_files = [
+        f for f in csv_files if "summary" not in f.name.lower() and "readme" not in f.name.lower()
+    ]
     # Also exclude RDS files that glob matched
-    csv_files = [f for f in csv_files if not f.name.endswith(".rds") and not f.name.endswith(".rds.gz")]
+    csv_files = [
+        f for f in csv_files if not f.name.endswith(".rds") and not f.name.endswith(".rds.gz")
+    ]
     if csv_files:
         if len(csv_files) == 1:
             return _load_csv_counts(csv_files[0])
@@ -130,11 +134,17 @@ def _load_from_dir(raw_dir: Path, dataset_meta: dict | None = None) -> ad.AnnDat
         return ad.concat(adatas, join="outer")
 
     # Priority 5: Any CSV/TSV/TXT file as a last resort (skip metadata-sized files)
-    all_tabular = list(raw_dir.glob("*.csv*")) + list(raw_dir.glob("*.tsv*")) + list(raw_dir.glob("*.txt*"))
+    all_tabular = (
+        list(raw_dir.glob("*.csv*")) + list(raw_dir.glob("*.tsv*")) + list(raw_dir.glob("*.txt*"))
+    )
     all_tabular = [f for f in all_tabular if f.stat().st_size > 50_000]  # skip tiny metadata files
-    all_tabular = [f for f in all_tabular if "readme" not in f.name.lower() and "umap" not in f.name.lower()]
+    all_tabular = [
+        f for f in all_tabular if "readme" not in f.name.lower() and "umap" not in f.name.lower()
+    ]
     if all_tabular:
-        logger.info("No named pattern matched; trying largest tabular file: %s", all_tabular[0].name)
+        logger.info(
+            "No named pattern matched; trying largest tabular file: %s", all_tabular[0].name
+        )
         # Sort by size descending and try the largest
         all_tabular.sort(key=lambda p: p.stat().st_size, reverse=True)
         return _load_csv_counts(all_tabular[0])
@@ -169,10 +179,7 @@ def _load_csv_counts(path: Path) -> ad.AnnData:
     logger.info("Loading count matrix from %s", path)
 
     # DGE and txt files are typically tab-separated; CSV files use comma
-    if ".csv" in path.name:
-        sep = ","
-    else:
-        sep = "\t"
+    sep = "," if ".csv" in path.name else "\t"
     opener = gzip.open if path.name.endswith(".gz") else open
     with opener(path, "rt") as fh:
         df = pd.read_csv(fh, sep=sep, index_col=0)

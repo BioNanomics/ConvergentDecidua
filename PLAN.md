@@ -112,18 +112,21 @@ human scATAC linked to the same stromal cells. CI green end-to-end.
   must stay in the epithelial sets (dilutes over-confident epithelial
   score in stromal cells).
 
-### Q2.2 — Reproducibility floor: CI green (lint debt)
+### Q2.2 — Reproducibility floor: CI green (lint debt) — ✅ DONE
 
-- [ ] Fix pre-existing lint: `UP017` (`src/reports/manifest.py`,
-  `src/reports/methods.py`), `SIM108`
-  (`src/ingest/anndata_writer.py:172`), `F841`
-  (`src/orthologs/ensembl.py:122`).
-- [ ] Decide Python version policy: bump `requires-python = ">=3.10"`
-  (recommended — eliminates the `strict=` class of bugs and matches the
-  ruff `target-version = "py311"`), OR add a CI matrix that proves 3.9
-  works.
-- [ ] Verify CI workflow under `.github/workflows/` actually runs ruff +
-  pytest + `wombat validate-config` on PRs.
+- [x] Fix all 11 pre-existing lint errors: 6 `B905` (zip(strict=)),
+  3 `UP017` (`datetime.UTC`), 1 `SIM108` ternary, 1 `F841` unused-var
+  (manually fixed in `src/orthologs/ensembl.py` — the ruff `--unsafe-fixes`
+  autofix produced a buggy no-op `RuntimeError(...)` constructor call;
+  replaced with proper `logger.warning` and removed the dead variable).
+- [x] Bump `requires-python = ">=3.11,<3.13"` (was `>=3.9`). Rationale:
+  matches `ruff target-version = "py311"` and CI's `python-version: "3.11"`.
+  Eliminates the `zip(strict=...)` Py3.9 compat bug class permanently.
+  Local venv on 3.9 must be recreated for installs; ruff still runs.
+- [x] `ruff check .`, `ruff format --check .`, `pytest`, `pytest -m real_data`,
+  and `wombat validate-config` all green locally.
+- [x] CI workflow `.github/workflows/ci.yml` already runs all three jobs
+  (lint, test, validate-configs) on Python 3.11. Verified.
 
 ### Q2.3 — Joint integration upgrade
 
@@ -279,8 +282,8 @@ earlier, so Q3 starts with statistically clean inputs.
 | Risk | Status | Mitigation |
 |---|---|---|
 | Mouse stromal recall (~67% post-Q2.1, target 80%) | 🟡 Partial — residual gap in Q2.4 | Annotation-strategy rework (hierarchical / score-margin / celltypist) |
-| Python 3.9 compat bugs | 🟡 Recurring | Q2.2: bump to `>=3.10` OR add CI matrix |
-| Pre-existing lint debt breaks "CI green" claim | 🟡 Recurring | Q2.2: fix the 5 errors |
+| Python 3.9 compat bugs | � Resolved (Q2.2) | `requires-python = ">=3.11,<3.13"` |
+| Pre-existing lint debt breaks "CI green" claim | 🟢 Resolved (Q2.2) | All 11 errors fixed; CI now actually green |
 | scATAC slips into Q3 | 🟢 Acceptable | Capped to Q3 stretch; do not extend Q2 |
 | Human bulk validation dataset not selected | 🟡 Pending | Pick by end of Q2 |
 | Docker build cache invalidates on R upgrade | 🟢 Low | Multi-stage build if it becomes painful |

@@ -106,20 +106,21 @@ def fetch_ensembl_orthologs(
     xml = _build_query_xml(_DATASETS[source], _ORTHOLOG_ATTRS[target])
 
     resp = None
-    last_error = None
     for mirror_url in _BIOMART_MIRRORS:
         logger.info("Querying BioMart (%s) for %s→%s orthologs...", mirror_url, source, target)
         try:
             r = requests.get(mirror_url, params={"query": xml}, timeout=300)
             r.raise_for_status()
             if r.text.startswith("Query ERROR"):
-                last_error = RuntimeError(f"BioMart query error: {r.text[:500]}")
-                logger.warning("Mirror %s returned error, trying next...", mirror_url)
+                logger.warning(
+                    "Mirror %s returned BioMart query error: %s",
+                    mirror_url,
+                    r.text[:500],
+                )
                 continue
             resp = r
             break  # success
         except requests.RequestException as exc:
-            last_error = exc
             logger.warning("Mirror %s failed: %s", mirror_url, exc)
             continue
 

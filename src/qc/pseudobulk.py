@@ -73,7 +73,7 @@ def pseudobulk(
         summed_rows.append(X[indices].sum(axis=0))
         # Record group metadata
         parts = label.split("|")
-        record = dict(zip(groupby, parts))
+        record = dict(zip(groupby, parts, strict=False))
         record["n_cells"] = len(indices)
         obs_records.append(record)
 

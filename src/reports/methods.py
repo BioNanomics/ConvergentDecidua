@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import platform
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def generate_methods_report(output_path: Path) -> Path:
 
 
 def _header() -> str:
-    ts = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    ts = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
     return f"# Methods Report\n\n*Generated: {ts}*"
 
 

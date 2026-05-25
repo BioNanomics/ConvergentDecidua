@@ -83,9 +83,7 @@ def apply_species_overrides(
         preserving order and de-duplicating.
     """
     cfg = load_config("markers")
-    overrides = (
-        cfg.get("species_overrides", {}).get(species, {}).get(kind, {}).get(set_name, {})
-    )
+    overrides = cfg.get("species_overrides", {}).get(species, {}).get(kind, {}).get(set_name, {})
     if not overrides:
         return list(mapped)
 

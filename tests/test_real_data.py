@@ -114,7 +114,9 @@ def test_coverage_matches_disk():
 
     a = ad.read_h5ad(integrated, backed="r")
     try:
-        actual = set(a.obs["dataset"].astype(str).unique()) if "dataset" in a.obs.columns else set()
+        actual = (
+            set(a.obs["dataset"].astype(str).unique()) if "dataset" in a.obs.columns else set()
+        )
     finally:
         a.file.close()
 

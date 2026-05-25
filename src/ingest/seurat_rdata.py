@@ -68,9 +68,7 @@ def rdata_dir_to_anndata(
         converted. Useful for selecting (e.g.) ``["UE_DSC"]`` from a
         multi-tissue dump.
     """
-    files = sorted(
-        p for p in raw_dir.iterdir() if p.name.endswith((".RData", ".RData.gz"))
-    )
+    files = sorted(p for p in raw_dir.iterdir() if p.name.endswith((".RData", ".RData.gz")))
     if include:
         files = [p for p in files if any(tag in p.name for tag in include)]
     if not files:
@@ -93,9 +91,7 @@ def rdata_dir_to_anndata(
 def _load_mtx_with_obs(mtx_dir: Path) -> ad.AnnData:
     mat = scipy.io.mmread(str(mtx_dir / "matrix.mtx")).T.tocsr()
     barcodes = [
-        ln.strip()
-        for ln in (mtx_dir / "barcodes.tsv").read_text().splitlines()
-        if ln.strip()
+        ln.strip() for ln in (mtx_dir / "barcodes.tsv").read_text().splitlines() if ln.strip()
     ]
     features = pd.read_csv(
         mtx_dir / "features.tsv",
