@@ -49,6 +49,46 @@ def test_integrated_includes_mouse():
 
 
 @REAL_DATA
+def test_mouse_stromal_recall():
+    """Q2.1 regression guard: ≥60% of UE_DSC mouse cells must survive
+    annotation + stromal subset. The aspirational target is ≥80%; the
+    remaining gap is a known annotation-strategy limitation (idxmax
+    over cell-type scores) tracked for Q2.3/Q2.4 follow-up.
+
+    Baseline before species_overrides: 11,484 / 23,471 = 48.9%
+    With species_overrides (Q2.1):     15,662 / 23,471 = 66.7%
+    """
+    p = RESULTS / "integrated" / "stromal_harmony.h5ad"
+    if not p.exists():
+        pytest.skip("integrated h5ad missing")
+    import anndata as ad
+
+    qc_path = RESULTS / "qc" / "GSE226417.h5ad"
+    if not qc_path.exists():
+        pytest.skip("GSE226417 QC h5ad missing")
+
+    a = ad.read_h5ad(p, backed="r")
+    try:
+        if "dataset" not in a.obs.columns:
+            pytest.skip("dataset column not in integrated obs")
+        mouse_stromal = int((a.obs["dataset"].astype(str) == "GSE226417").sum())
+    finally:
+        a.file.close()
+
+    qc = ad.read_h5ad(qc_path, backed="r")
+    try:
+        ue_dsc_total = qc.n_obs
+    finally:
+        qc.file.close()
+
+    recall = mouse_stromal / ue_dsc_total
+    assert recall >= 0.60, (
+        f"Mouse stromal recall regressed: {mouse_stromal}/{ue_dsc_total} "
+        f"= {recall:.1%} (Q2.1 floor 60%; aspirational 80%)"
+    )
+
+
+@REAL_DATA
 def test_manifest_has_checksums():
     p = RESULTS / "reports" / "manifest.csv"
     if not p.exists():

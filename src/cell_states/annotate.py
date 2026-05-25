@@ -89,11 +89,17 @@ def _prepare_gene_sets(
     var_set = set(var_names)
     result = {}
 
+    from src.scoring.gene_sets import apply_species_overrides
+
     for ct, genes in markers.items():
         if not genes:
             continue
 
         mapped = [symbol_map.get(g, g) for g in genes] if symbol_map else list(genes)
+
+        # Augment with per-species overrides for genes the backbone cannot map
+        # (e.g. mouse decidual-prolactin family; PRL is Tier 2 only).
+        mapped = apply_species_overrides(ct, mapped, species, "cell_type_markers")
 
         # Filter to genes present in the dataset
         present = [g for g in mapped if g in var_set]

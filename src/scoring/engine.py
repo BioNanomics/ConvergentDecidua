@@ -43,7 +43,7 @@ def score_gene_set(
     ad.AnnData
         AnnData with score added to ``.obs[score_name]``.
     """
-    mapped = _map_genes(genes, species, backbone_path, adata.var_names)
+    mapped = _map_genes(genes, species, backbone_path, adata.var_names, set_name=score_name)
 
     if len(mapped) < 2:
         logger.warning(
@@ -99,8 +99,14 @@ def _map_genes(
     species: str,
     backbone_path: Path | None,
     var_names,
+    set_name: str | None = None,
 ) -> list[str]:
-    """Map gene symbols to the target species and filter to present genes."""
+    """Map gene symbols to the target species and filter to present genes.
+
+    When ``set_name`` is provided and ``species != 'human'``, per-species
+    overrides from ``markers.yaml::species_overrides`` are merged in before
+    filtering against ``var_names``.
+    """
     var_set = set(var_names)
 
     if species != "human" and backbone_path:
@@ -111,5 +117,10 @@ def _map_genes(
         mapped = [h2m.get(g, g) for g in genes]
     else:
         mapped = list(genes)
+
+    if set_name and species != "human":
+        from src.scoring.gene_sets import apply_species_overrides
+
+        mapped = apply_species_overrides(set_name, mapped, species, "score_gene_sets")
 
     return [g for g in mapped if g in var_set]

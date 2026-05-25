@@ -142,3 +142,30 @@ score_gene_sets:
     - ANGPT1
     - ANGPT2
     - TEK
+
+# Per-species symbol overrides for markers/score genes that the Tier-1 ortholog
+# backbone cannot map. Each entry augments the backbone-mapped list:
+#   add:     extra symbols to include (already in the target species' namespace)
+#   remove:  symbols to drop from the mapped list (silences known-bad mappings)
+# See src/scoring/gene_sets.py::apply_species_overrides.
+#
+# Mouse rationale (Q2.1, validated against results/orthologs/backbone.parquet):
+# - PRL has no 1:1 mouse ortholog; mouse uses an expanded decidual-prolactin
+#   family. Prl8a2 = dPRP, the canonical decidual prolactin-related protein.
+# - LEFTY2, MUC1, KLRB1 are Tier 2 in the backbone, so the Tier-1 filter drops
+#   them; re-add the canonical mouse symbol explicitly.
+# - PAEP (glycodelin) has no mouse ortholog at all — primate-specific; omit.
+species_overrides:
+  mouse:
+    cell_type_markers:
+      decidual_stromal:
+        add: [Prl8a2, Prl3c1, Prl3d1, Prl8a1, Lefty1, Lefty2]
+      epithelial_glandular:
+        add: [Muc1]
+      epithelial_luminal:
+        add: [Muc1]
+      immune_uNK:
+        add: [Klrb1c, Klrb1, Ncr1]   # Ncr1 = NKp46, canonical mouse NK marker
+    score_gene_sets:
+      decidual_score:
+        add: [Prl8a2, Prl3c1, Prl3d1, Prl8a1, Lefty1, Lefty2]

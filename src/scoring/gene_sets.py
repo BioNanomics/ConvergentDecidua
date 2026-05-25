@@ -54,3 +54,61 @@ def load_cell_type_markers() -> dict[str, list[str]]:
     cfg = load_config("markers")
     markers = cfg.get("cell_type_markers", {})
     return {k: v for k, v in markers.items() if v}
+
+
+def apply_species_overrides(
+    set_name: str,
+    mapped: list[str],
+    species: str,
+    kind: str,
+) -> list[str]:
+    """Augment a backbone-mapped gene list with per-species overrides.
+
+    Parameters
+    ----------
+    set_name
+        Gene-set key (e.g. ``"decidual_score"`` or ``"decidual_stromal"``).
+    mapped
+        Genes after ortholog-backbone mapping into ``species``.
+    species
+        Target species name (e.g. ``"mouse"``).
+    kind
+        One of ``"cell_type_markers"`` or ``"score_gene_sets"`` — matches the
+        sub-key under ``species_overrides[species]`` in markers.yaml.
+
+    Returns
+    -------
+    list[str]
+        Augmented gene list with adds merged in and removes filtered out,
+        preserving order and de-duplicating.
+    """
+    cfg = load_config("markers")
+    overrides = (
+        cfg.get("species_overrides", {}).get(species, {}).get(kind, {}).get(set_name, {})
+    )
+    if not overrides:
+        return list(mapped)
+
+    add = list(overrides.get("add") or [])
+    remove = set(overrides.get("remove") or [])
+
+    seen: set[str] = set()
+    result: list[str] = []
+    for g in list(mapped) + add:
+        if g in remove or g in seen:
+            continue
+        seen.add(g)
+        result.append(g)
+
+    n_added = len(set(add) - set(mapped) - remove)
+    n_removed = len(set(mapped) & remove)
+    if n_added or n_removed:
+        logger.info(
+            "species_overrides[%s][%s][%s]: +%d added, -%d removed",
+            species,
+            kind,
+            set_name,
+            n_added,
+            n_removed,
+        )
+    return result
