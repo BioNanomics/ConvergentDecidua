@@ -181,15 +181,30 @@ human scATAC linked to the same stromal cells. CI green end-to-end.
     are missing from the joint var set — dropped during HVG selection.
   - Follow-ups tracked as Q3 risks, not Q2 blockers.
 
-### Q2.5 — scATAC (GSE183771, human-only)
+### Q2.5 — scATAC (GSE183771, human-only) — 🟡 PARTIAL (scope cap activated)
 
-- [ ] Finish `src/qc/scatac.py` — TSS enrichment, TF-IDF + LSI, doublet
-  filter. Produce per-cell AnnData.
-- [ ] Gene-activity matrix via Signac-style aggregation (or `episcanpy`).
-  No cross-species ATAC.
-- [ ] Co-embed with human stromal RNA via shared stromal markers.
-  Document as auxiliary evidence only.
-- [ ] **Scope cap:** if scATAC slips past month 6, push to Q3 stretch.
+- [x] **Sparse TF-IDF** — `src/qc/scatac.py::_tfidf` rewritten to
+  stay sparse end-to-end. The old version called `X.toarray()` on the
+  full peak matrix, which OOMs on real scATAC (~10^4 cells ×
+  ~10^5 peaks ≈ 20 GB dense). Now uses `scipy.sparse.diags` for
+  row/column scaling. Locked in with unit tests.
+- [x] **Gene-activity matrix** — new `src/qc/scatac.py::gene_activity`
+  function. Signac-style peak-to-gene aggregation: for each gene,
+  sum counts of all peaks whose midpoint falls within `[TSS-upstream,
+  TSS+downstream]` (window flipped for minus-strand genes). Pure
+  scipy/pandas, no Signac dep. Locked in with unit tests covering
+  window logic, strand handling, and input-validation errors.
+- [x] **Unit tests** in `tests/test_scatac.py` (4 tests, all on tiny
+  synthetic matrices — no real data needed).
+- [ ] **Fetch + process GSE183771** — DEFERRED to Q3 stretch per the
+  scope cap in this section. Downloading + processing fragment-level
+  scATAC (~10s of GB raw → cell × peak matrix → QC h5ad) is multi-day
+  work; better done with the infrastructure already validated. The
+  ingest/QC/integration code paths are ready when the data lands.
+- [ ] **Co-embed with stromal RNA** — also deferred to Q3 (depends on
+  fetched data).
+- [x] **Scope cap activated:** scATAC moved to Q3 stretch as the
+  Q2 plan explicitly permitted.
   Do NOT extend Q2.
 
 ### Q2.6 — Snakemake DAG cleanup (parallel, low effort)
