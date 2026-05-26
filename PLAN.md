@@ -333,15 +333,16 @@ interpretation. Fix:
 
 ### Gate item B — Drop-audit in integration QC report
 
-- [ ] Extend `src/reports/integration_qc.py` so the canonical-marker
-  table labels each missing gene with the **reason**: `lost_orthology`,
-  `lost_inner_join`, or `lost_hvg`. Today the report only says
-  "absent." Reviewers and future-us need to know where it fell out.
+- [x] Extend `src/reports/integration_qc.py` so the canonical-marker
+      table labels each missing gene with the **reason**: `lost_orthology`,
+      `lost_inner_join`, `lost_hvg`, or `present`. Done in commit
+      after `133a047`. Real-data run confirms all 5 missing canonical
+      markers (PGR, HAND2, WNT4, PRL, LEFTY2) are `lost_hvg` — i.e.
+      the HVG carveout in gate item A will recover them.
 - [ ] Add a regression test in `tests/test_real_data.py` that asserts
-  all six protected-core markers survive into the integrated analysis
-  layer (`adata_integrated.var_names`). Floor, not aspirational.
-
-### Gate item C — Ortholog spot-check memo
+      all six protected-core markers survive into the integrated analysis
+      layer (`adata_integrated.var_names`). Floor, not aspirational.
+      **Lands with gate item A** (the test asserts what A makes true).
 
 - [ ] Write `docs/ortholog_spotcheck.md`: for each gene in the protected
   core panel, list the human Ensembl ID, mouse Ensembl ID, source
@@ -352,15 +353,14 @@ interpretation. Fix:
 
 ### Gate item D — Honest reproducibility statement
 
-- [ ] Update `docs/REPRODUCE.md` (and the README "CI" badge section if
-  applicable) to distinguish:
+- [x] Update `docs/REPRODUCE.md` (and the README "CI" badge section if
+      applicable) to distinguish:
   - **Code-quality CI** (lint, format, unit tests, config validation,
     workflow dry-run) — green on every push.
   - **Real-data reproducibility** (`pytest -m real_data`, full
     Snakemake DAG) — runs locally / on a populated `results/`; not
     enforced by CI. List the exact commands a reviewer needs.
-
-### Gate item E — Re-evaluate integration strategy after A–D land
+  Done in commit `133a047`.
 
 - [ ] Re-run integration QC. If LISI is still ≈ 1.00 even with the
   protected core preserved, **do not force biology through the
@@ -370,15 +370,14 @@ interpretation. Fix:
 
 ### Q2 closeout deliverables (companions to the gate)
 
-- [ ] `docs/q2_closeout.md` — one page: what Q2 solved, what Q2 only
-  diagnosed, what remains blocked. Reuses the bullets from the
-  closeout review above; no new analysis.
-- [ ] `docs/marker_recovery_plan.md` — short action note for the five
-  missing markers (PGR, HAND2, WNT4, PRL, LEFTY2): which are
-  recoverable via Gate item A's HVG carveout vs which need Tier 2
-  orthology vs which stay exploratory.
-
-### Standing controls (do not relax in Q3)
+- [x] `docs/q2_closeout.md` — one page: what Q2 solved, what Q2 only
+      diagnosed, what remains blocked. Reuses the bullets from the
+      closeout review above; no new analysis. Done in commit `133a047`.
+- [x] `docs/marker_recovery_plan.md` — short action note for the five
+      missing markers (PGR, HAND2, WNT4, PRL, LEFTY2): which are
+      recoverable via Gate item A's HVG carveout vs which need Tier 2
+      orthology vs which stay exploratory. Done in commit `133a047`.
+      Gate-B drop-audit subsequently confirmed all 5 are `lost_hvg`.
 
 - Stage comparability across datasets (cycle-day matching, pregnancy-
   day matching) before any cross-dataset claim.

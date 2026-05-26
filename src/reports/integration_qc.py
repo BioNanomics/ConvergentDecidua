@@ -46,6 +46,7 @@ def generate_integration_qc(
     integrated_h5ad: Path,
     output_path: Path,
     backbone_path: Path | None = None,
+    processed_dir: Path | None = None,
     n_lisi_cells: int = 5000,
 ) -> dict:
     """Compute LISI mixing + marker recovery; write a markdown report.
@@ -59,6 +60,10 @@ def generate_integration_qc(
         Markdown report destination.
     backbone_path
         Optional ortholog backbone for mapping human markers to mouse.
+    processed_dir
+        Optional ``results/processed/`` directory containing per-dataset
+        h5ads. Used to label *why* a canonical marker is missing from the
+        joint var set (orthology, inner-join, or HVG selection).
     n_lisi_cells
         Subsample size for LISI (full computation is O(n^2) k-NN).
 
@@ -92,7 +97,8 @@ def generate_integration_qc(
     metrics["composition"] = composition.to_dict(orient="records")
 
     # --- Marker recovery ---------------------------------------------
-    recovery = _marker_recovery(adata, backbone_path)
+    upstream = _scan_processed_var_by_species(processed_dir) if processed_dir else {}
+    recovery = _marker_recovery(adata, backbone_path, upstream)
     metrics["marker_recovery"] = recovery.to_dict(orient="records")
 
     # --- Write markdown ---------------------------------------------
@@ -147,15 +153,78 @@ def _composition_table(adata):
     return grouped.sort_values(["species", "dataset", "n_cells"], ascending=[True, True, False])
 
 
-def _marker_recovery(adata, backbone_path: Path | None):
-    """Per-species fraction expressing each canonical marker.
+def _scan_processed_var_by_species(processed_dir: Path) -> dict[str, set[str]]:
+    """Return ``{species: set(uppercase var_names)}`` from per-dataset h5ads.
+
+    Reads each ``*.h5ad`` in ``processed_dir`` in backed mode so we only
+    pay for the ``var_names`` + the ``species`` column. Used by the
+    drop-audit in :func:`_marker_recovery` to distinguish HVG loss from
+    upstream orthology / inner-join loss.
+    """
+    import contextlib
+
+    import anndata as ad
+
+    by_species: dict[str, set[str]] = {}
+    if not processed_dir.exists():
+        return by_species
+    for path in sorted(processed_dir.glob("*.h5ad")):
+        try:
+            ad_ = ad.read_h5ad(path, backed="r")
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("drop-audit: could not read %s (%s)", path, exc)
+            continue
+        try:
+            if "species" not in ad_.obs.columns:
+                continue
+            species_vals = ad_.obs["species"].astype(str).unique().tolist()
+            symbols = {str(v).upper() for v in ad_.var_names}
+            for sp in species_vals:
+                by_species.setdefault(sp, set()).update(symbols)
+        finally:
+            with contextlib.suppress(Exception):
+                ad_.file.close()
+    return by_species
+
+
+def _classify_drop_reason(
+    in_joint: bool,
+    symbol: str,
+    upstream_by_species: dict[str, set[str]],
+) -> str:
+    """Label *why* a canonical marker is or isn't in the joint var set.
+
+    Returns one of:
+    - ``present`` — in integrated var
+    - ``lost_hvg`` — in every species' upstream var set, dropped at HVG step
+    - ``lost_inner_join`` — in some but not all species' upstream var sets
+    - ``lost_orthology`` — in no species' upstream var set
+    - ``unknown`` — no upstream data provided
+    """
+    if in_joint:
+        return "present"
+    if not upstream_by_species:
+        return "unknown"
+    sym = symbol.upper()
+    present_in = [sp for sp, vs in upstream_by_species.items() if sym in vs]
+    n_species = len(upstream_by_species)
+    if len(present_in) == n_species:
+        return "lost_hvg"
+    if len(present_in) == 0:
+        return "lost_orthology"
+    return "lost_inner_join"
+
+
+def _marker_recovery(adata, backbone_path: Path | None, upstream_by_species=None):
+    """Per-species fraction expressing each canonical marker + drop-audit.
 
     The integrated h5ad's ``var_names`` are already harmonized to
     uppercase human symbols (mouse rows were symbol-mapped via the
     ortholog backbone before integration), so we do NOT remap here —
     we just look up the human symbol in ``var_names`` and split by
-    species. Missing genes (lost to HVG selection) are flagged so
-    reviewers can see the gap.
+    species. The ``drop_reason`` column distinguishes HVG loss from
+    inner-join loss and orthology loss when ``upstream_by_species`` is
+    supplied (built by :func:`_scan_processed_var_by_species`).
 
     The ``backbone_path`` argument is accepted for API symmetry but
     not used; the joint space carries human symbols.
@@ -164,6 +233,7 @@ def _marker_recovery(adata, backbone_path: Path | None):
     import pandas as pd
 
     _ = backbone_path  # unused; symbols are already harmonized
+    upstream_by_species = upstream_by_species or {}
     var_index = {str(v): i for i, v in enumerate(adata.var_names)}
 
     species_present = (
@@ -176,13 +246,14 @@ def _marker_recovery(adata, backbone_path: Path | None):
     for human_symbol in CANONICAL_MARKERS_HUMAN:
         row = {"marker": human_symbol}
         j = var_index.get(human_symbol)
-        if j is None:
-            row["in_joint_var"] = False
+        in_joint = j is not None
+        row["in_joint_var"] = in_joint
+        row["drop_reason"] = _classify_drop_reason(in_joint, human_symbol, upstream_by_species)
+        if not in_joint:
             for species in species_present:
                 row[f"{species}_pct_expr"] = None
             rows.append(row)
             continue
-        row["in_joint_var"] = True
         for species in species_present:
             mask = (adata.obs["species"].astype(str) == species).values
             X = adata.X[mask, j]
@@ -268,9 +339,15 @@ def _render_markdown(metrics: dict, composition, recovery) -> str:
         "## Marker recovery",
         "",
         "Fraction of cells (per species) with non-zero expression of "
-        "each canonical decidualization marker. Confirms ortholog "
-        "mapping carried the gene through and integration did not "
-        "drop it from the joint var set.",
+        "each canonical decidualization marker. The `drop_reason` "
+        "column labels *why* a marker is missing from the joint var "
+        "set: `present` — in integrated var; `lost_hvg` — present in "
+        "every species' upstream processed h5ad but dropped at HVG "
+        "selection (the **fixable** failure mode — see pre-Q3 gate "
+        "item A in `PLAN.md` for the `protected_core` carveout); "
+        "`lost_inner_join` — present in some species' upstream but "
+        "not all; `lost_orthology` — absent from every species' "
+        "upstream var set; `unknown` — no upstream data provided.",
         "",
     ]
     if len(recovery):

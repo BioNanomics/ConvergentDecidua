@@ -405,6 +405,7 @@ def generate_reports() -> None:
         results_dir / "integrated" / "stromal_cross_species.h5ad",
         report_dir / "integration_qc.md",
         backbone_path=results_dir / "orthologs" / "backbone.parquet",
+        processed_dir=results_dir / "processed",
     )
     console.print("[green]  ✓ Integration QC report[/green]")
 
