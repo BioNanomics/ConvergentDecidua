@@ -39,6 +39,7 @@ def annotate_cell_types(
     """
     markers_cfg = load_config("markers")
     cell_type_markers = markers_cfg["cell_type_markers"]
+    cell_type_lineages = markers_cfg.get("cell_type_lineages", {})
 
     gene_sets = _prepare_gene_sets(cell_type_markers, species, backbone_path, adata.var_names)
 
@@ -46,6 +47,7 @@ def annotate_cell_types(
         logger.warning("No usable gene sets after filtering — skipping annotation")
         adata.obs["cell_type"] = "unknown"
         adata.obs["cell_type_score"] = 0.0
+        adata.obs["lineage"] = "unknown"
         return adata
 
     # Score each cell type
@@ -55,15 +57,25 @@ def annotate_cell_types(
         sc.tl.score_genes(adata, gene_list=genes, score_name=col)
         score_cols.append((ct, col))
 
-    # Assign best label
     import pandas as pd
 
     score_df = pd.DataFrame(
         {ct: adata.obs[col] for ct, col in score_cols},
         index=adata.obs.index,
     )
-    adata.obs["cell_type"] = score_df.idxmax(axis=1)
-    adata.obs["cell_type_score"] = score_df.max(axis=1)
+
+    if cell_type_lineages:
+        # Hierarchical assignment: lineage first (max over constituent
+        # cell-type scores), then fine-grained cell_type within winning
+        # lineage. Avoids vote-splitting across stromal sub-types.
+        adata.obs["cell_type"], adata.obs["cell_type_score"], adata.obs["lineage"] = (
+            _hierarchical_assign(score_df, cell_type_lineages)
+        )
+    else:
+        # Legacy flat idxmax (no lineages declared in markers.yaml)
+        adata.obs["cell_type"] = score_df.idxmax(axis=1)
+        adata.obs["cell_type_score"] = score_df.max(axis=1)
+        adata.obs["lineage"] = "unknown"
 
     # Log distribution
     counts = adata.obs["cell_type"].value_counts()
@@ -72,6 +84,57 @@ def annotate_cell_types(
         logger.debug("  %s: %d cells", ct, n)
 
     return adata
+
+
+def _hierarchical_assign(
+    score_df,
+    lineages: dict[str, list[str]],
+):
+    """Two-pass assignment: lineage by max sub-score, then cell_type within.
+
+    Returns a tuple of (cell_type, cell_type_score, lineage) Series, all
+    indexed like ``score_df``.
+    """
+    import pandas as pd
+
+    # Build lineage→score matrix: each lineage's score per cell is the
+    # max of its constituent cell-type scores that are actually present
+    # in ``score_df``.
+    lineage_scores = {}
+    members: dict[str, list[str]] = {}
+    for lineage_name, ct_list in lineages.items():
+        present = [ct for ct in ct_list if ct in score_df.columns]
+        if not present:
+            continue
+        members[lineage_name] = present
+        lineage_scores[lineage_name] = score_df[present].max(axis=1)
+
+    if not lineage_scores:
+        # No declared lineage members were scored — fall back to flat idxmax.
+        return (
+            score_df.idxmax(axis=1),
+            score_df.max(axis=1),
+            pd.Series("unknown", index=score_df.index),
+        )
+
+    lineage_df = pd.DataFrame(lineage_scores, index=score_df.index)
+    lineage = lineage_df.idxmax(axis=1)
+
+    # Within winning lineage, pick the fine-grained cell_type.
+    cell_type = pd.Series(index=score_df.index, dtype=object)
+    for lineage_name, present in members.items():
+        mask = lineage == lineage_name
+        if not mask.any():
+            continue
+        sub = score_df.loc[mask, present]
+        cell_type.loc[mask] = sub.idxmax(axis=1)
+
+    cell_type_score = pd.Series(
+        [score_df.loc[idx, ct] for idx, ct in cell_type.items()],
+        index=score_df.index,
+    )
+
+    return cell_type, cell_type_score, lineage
 
 
 def _prepare_gene_sets(

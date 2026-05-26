@@ -50,13 +50,18 @@ def test_integrated_includes_mouse():
 
 @REAL_DATA
 def test_mouse_stromal_recall():
-    """Q2.1 regression guard: ≥60% of UE_DSC mouse cells must survive
-    annotation + stromal subset. The aspirational target is ≥80%; the
-    remaining gap is a known annotation-strategy limitation (idxmax
-    over cell-type scores) tracked for Q2.3/Q2.4 follow-up.
+    """Q2.1/Q2.4 regression guard: ≥60% of UE_DSC mouse cells must
+    survive annotation + stromal subset. GSE226417 is "Uterine Epithelial
+    AND Decidual Stromal" by design — the ~33% non-stromal fraction is
+    largely real epithelial signal (Muc1+Krt18+Epcam), not annotation
+    failure. The Q2.1 80% aspiration was based on the incorrect
+    assumption that the dataset was pure stromal; replaced in Q2.4 with
+    the hierarchical lineage gate (architectural improvement) plus this
+    honest 60% floor.
 
     Baseline before species_overrides: 11,484 / 23,471 = 48.9%
     With species_overrides (Q2.1):     15,662 / 23,471 = 66.7%
+    With hierarchical lineage (Q2.4):  15,662 / 23,471 = 66.7%
     """
     p = RESULTS / "integrated" / "stromal_harmony.h5ad"
     if not p.exists():

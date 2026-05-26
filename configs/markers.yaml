@@ -2,6 +2,31 @@
 # See README.md §8 (cell-state ontology) and §9 (scoring modules).
 # Human gene symbols — map to other species via ortholog backbone.
 
+# Lineage grouping for hierarchical annotation. The annotator first
+# assigns each cell to a lineage (max over constituent cell-type scores),
+# then picks the fine-grained cell_type within that lineage. This avoids
+# the failure mode where 4 stromal sub-types split votes and a single
+# epithelial bucket steals the cell. See src/cell_states/annotate.py.
+cell_type_lineages:
+  stromal:
+    - stromal_fibroblast
+    - pre_decidual_stromal
+    - decidual_stromal
+    - senescent_decidual
+  perivascular:
+    - perivascular
+  epithelial:
+    - epithelial_glandular
+    - epithelial_luminal
+  endothelial:
+    - endothelial
+  immune:
+    - immune_uNK
+    - macrophage
+    - T_cell
+  other:
+    - other
+
 cell_type_markers:
   stromal_fibroblast:
     - VIM
