@@ -22,6 +22,7 @@ def integrate_stromal(
     backbone_path: Path,
     method: str = "harmony",
     n_hvg: int = 3000,
+    orthology_tier: int = 1,
 ) -> ad.AnnData:
     """Integrate stromal datasets across species.
 
@@ -36,6 +37,11 @@ def integrate_stromal(
         Integration method: ``"harmony"`` (default) or ``"scvi"``.
     n_hvg : int
         Number of highly variable genes to select.
+    orthology_tier : int
+        ``1`` (default, conservative) = high-confidence 1:1 orthologs only.
+        ``12`` = include Tier 2 orthogroups (relaxed; recovers PRL family,
+        LEFTY2, MUC1, etc. for cross-species gene-space). Use ``12`` when
+        joint embedding loses too many decidual markers.
 
     Returns
     -------
@@ -44,15 +50,22 @@ def integrate_stromal(
     """
     # Step 1: Map all datasets to common gene space via backbone
     backbone = pq.read_table(backbone_path).to_pandas()
-    tier1 = backbone[backbone["tier"] == 1]
+    if orthology_tier == 1:
+        tier = backbone[backbone["tier"] == 1]
+    elif orthology_tier == 12:
+        tier = backbone[backbone["tier"].isin([1, 2])]
+    else:
+        msg = f"orthology_tier must be 1 or 12, got {orthology_tier}"
+        raise ValueError(msg)
+    logger.info("Ortholog backbone: tier=%s, %d rows", orthology_tier, len(tier))
 
     mapped = []
     for adata in adata_list:
         species = adata.obs["species"].iloc[0]
         if species == "human":
-            mapped.append(_subset_to_backbone_genes(adata, tier1, "source"))
+            mapped.append(_subset_to_backbone_genes(adata, tier, "source"))
         else:
-            mapped.append(_remap_mouse_genes(adata, tier1))
+            mapped.append(_remap_mouse_genes(adata, tier))
 
     # Step 2: Concatenate
     combined = ad.concat(
@@ -119,14 +132,33 @@ def _remap_mouse_genes(adata: ad.AnnData, tier1: pd.DataFrame) -> ad.AnnData:
 
 
 def _run_harmony(adata: ad.AnnData) -> None:
-    """Run Harmony integration on PCA coordinates."""
+    """Run Harmony integration on PCA coordinates.
+
+    Batch key strategy:
+    - Multi-species AND multi-dataset-per-species  -> ['species', 'dataset']
+    - Multi-species, single dataset per species    -> 'species'
+    - Single species                                -> 'dataset'
+    """
     try:
         import harmonypy
 
-        # Use 'dataset' as batch key if multiple datasets, 'species' if multi-species
         n_species = adata.obs["species"].nunique()
-        batch_key = "species" if n_species > 1 else "dataset"
-        logger.info("Harmony batch key: %s (%d unique)", batch_key, adata.obs[batch_key].nunique())
+        if n_species > 1:
+            # Is there within-species batch variation (>1 dataset per species)?
+            per_species_datasets = adata.obs.groupby("species", observed=True)["dataset"].nunique()
+            batch_key = ["species", "dataset"] if (per_species_datasets > 1).any() else "species"
+        else:
+            batch_key = "dataset"
+
+        if isinstance(batch_key, list):
+            n_unique = adata.obs[batch_key].drop_duplicates().shape[0]
+            logger.info("Harmony batch keys: %s (%d unique combos)", batch_key, n_unique)
+        else:
+            logger.info(
+                "Harmony batch key: %s (%d unique)",
+                batch_key,
+                adata.obs[batch_key].nunique(),
+            )
 
         ho = harmonypy.run_harmony(
             adata.obsm["X_pca"],

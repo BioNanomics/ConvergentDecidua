@@ -236,7 +236,13 @@ def orthologs_build(no_gprofiler: bool) -> None:
 @cli.command()
 @click.option("--mode", default="stromal", help="Integration mode (e.g. stromal).")
 @click.option("--method", default="harmony", help="Integration method: harmony or scvi.")
-def integrate(mode: str, method: str) -> None:
+@click.option(
+    "--orthology-tier",
+    type=click.Choice(["1", "12"]),
+    default="1",
+    help="Ortholog tier: 1 = high-confidence 1:1 only; 12 = include Tier 2 orthogroups.",
+)
+def integrate(mode: str, method: str, orthology_tier: str) -> None:
     """Integrate datasets across species."""
     from pathlib import Path
 
@@ -250,7 +256,8 @@ def integrate(mode: str, method: str) -> None:
     project_root = Path(__file__).resolve().parent.parent
     backbone_path = project_root / "results" / "orthologs" / "backbone.parquet"
     qc_dir = project_root / "results" / "qc"
-    out_path = project_root / "results" / "integrated" / f"{mode}_{method}.h5ad"
+    canonical_path = project_root / "results" / "integrated" / f"{mode}_cross_species.h5ad"
+    legacy_alias = project_root / "results" / "integrated" / f"{mode}_{method}.h5ad"
 
     if not backbone_path.exists():
         console.print("[red]Backbone not found — run 'wombat orthologs build' first[/red]")
@@ -291,11 +298,30 @@ def integrate(mode: str, method: str) -> None:
         raise SystemExit(1)
 
     console.print(f"[blue]Integrating {len(stromal_list)} datasets ({method})...[/blue]")
-    integrated = integrate_stromal(stromal_list, backbone_path, method=method)
+    integrated = integrate_stromal(
+        stromal_list,
+        backbone_path,
+        method=method,
+        orthology_tier=int(orthology_tier),
+    )
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    integrated.write_h5ad(out_path)
-    console.print(f"[green]✓ Integrated: {integrated.n_obs} cells → {out_path}[/green]")
+    canonical_path.parent.mkdir(parents=True, exist_ok=True)
+    integrated.write_h5ad(canonical_path)
+    console.print(f"[green]✓ Integrated: {integrated.n_obs} cells → {canonical_path}[/green]")
+
+    # Back-compat alias for the legacy {mode}_{method}.h5ad name.
+    # Use a symlink when possible; fall back to a copy on filesystems
+    # that don't support it (or where one already exists as a real file).
+    try:
+        if legacy_alias.is_symlink() or legacy_alias.exists():
+            legacy_alias.unlink()
+        legacy_alias.symlink_to(canonical_path.name)
+        console.print(f"[dim]  ↳ alias: {legacy_alias.name} -> {canonical_path.name}[/dim]")
+    except OSError:
+        import shutil
+
+        shutil.copy2(canonical_path, legacy_alias)
+        console.print(f"[dim]  ↳ alias copy: {legacy_alias.name}[/dim]")
 
 
 @cli.command("score-decidua")
