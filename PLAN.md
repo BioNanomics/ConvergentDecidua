@@ -356,6 +356,22 @@ interpretation. Fix:
   Two pages max. No code change required; it is a manual evidence
   trail for the manuscript and a reviewer-defense doc.
 
+### Gate item C — Ortholog spot-check memo
+
+- [x] **Orthology-validation portion (substantially closed).**
+      `docs/ortholog_spotcheck.md` covers all 6 protected-core genes
+      with Ensembl Compara URLs, HGNC + MGI cross-references, and
+      landmark mouse + human uterine functional citations. All 6 are
+      Tier 1 `ortholog_one2one` (confidence=1). Backbone built
+      2026-04-26 via Ensembl Biomart (specific Ensembl release not
+      pinned — recorded as a known limitation in the memo).
+- [ ] **Expression-side residual (IGFBP1 only).** Raw-vs-remapped
+      mouse-matrix audit for IGFBP1: confirm `Igfbp1` symbol survives
+      the backbone remap end-to-end, then check per-`cycle_stage`
+      pseudobulk before drawing biological conclusions. Scoped to
+      IGFBP1-based claims only — not a general Q3 blocker. Tracked in
+      `docs/marker_recovery_plan.md`.
+
 ### Gate item D — Honest reproducibility statement
 
 - [x] Update `docs/REPRODUCE.md` (and the README "CI" badge section if
