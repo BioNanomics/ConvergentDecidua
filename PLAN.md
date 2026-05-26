@@ -398,9 +398,11 @@ interpretation. Fix:
 conservative candidate-regulator shortlists. `species_overrides` moved
 earlier, so Q3 starts with statistically clean inputs.
 
-> **Blocked on pre-Q3 acceptance gate above.** Gate items A, B, D
-> and E are closed; gate item C (ortholog spot-check memo) remains.
-> Do not begin Q3.1 until C is also checked.
+> **Pre-Q3 acceptance gate closed (all five items A–E checked).**
+> Q3.1 may now begin. The single open caveat is the IGFBP1 mouse
+> 0 % expression diagnosis (symbol / stage / divergence); it is a
+> Q3 prerequisite only for IGFBP1-based claims, not a general Q3
+> blocker.
 
 ### Q3.1 — Bulk-data score validation
 
@@ -490,7 +492,7 @@ earlier, so Q3 starts with statistically clean inputs.
 | **Cross-species LISI ≈ 1.00** (no mixing in Harmony embedding) | 🟠 Surfaced by Q2.4 QC report | **Pre-Q3 gate item E:** re-evaluate after geometry/biology split; pivot to matched-state module-score + pseudobulk evidence if LISI stays ≈ 1.00. Do not force biology through integrated UMAP. |
 | **Canonical markers dropped by HVG selection** (PGR/HAND2/WNT4/PRL/LEFTY2 absent from joint var set) | � Resolved by pre-Q3 gate item A (geometry/biology split + `protected_core` carveout in `integrate.py`). Protected core (PGR/FOXO1/HAND2/WNT4/IGFBP1/IL15) all present in integrated h5ad. PRL/LEFTY2 remain exploratory. | n/a |
 | **IGFBP1 0% expression in mouse** (separate signal flagged by Q2.4 report) | 🟠 Orthology / stage check pending (`docs/marker_recovery_plan.md`) | Q3 prerequisite for any IGFBP1-based claim; verify `Igfbp1` symbol/case + per-cycle_stage pseudobulk |
-| **Orthology layer not externally validated** (g:Profiler 0/16168 Tier 1 confirmations) | 🟠 New — surfaced in Q2 closeout review | **Pre-Q3 gate item C:** per-gene spot-check memo for protected core panel before any comparative-biology claim |
+| **Orthology layer not externally validated** (g:Profiler 0/16168 Tier 1 confirmations) | � Resolved for the protected core by `docs/ortholog_spotcheck.md` (5/6 cleared via Ensembl Compara + HGNC/MGI + functional literature; IGFBP1 ortholog OK but mouse 0 % expression caveat tracked separately) | Broader backbone validation remains a Q4-stretch item; not a year-one blocker |
 | **"CI green" overstates reproducibility** (real-data tests skipped in CI) | 🟠 New — surfaced in Q2 closeout review | **Pre-Q3 gate item D:** REPRODUCE.md must split code-quality CI vs real-data repro |
 | scATAC slips into Q3 | 🟢 Acceptable | Capped to Q3 stretch; do not extend Q2 |
 | Human bulk validation dataset not selected | 🟡 Pending | Pick by end of Q2 |
