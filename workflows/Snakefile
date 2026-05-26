@@ -1,7 +1,38 @@
-"""Snakemake workflow for ConvergentDecidua MVR 0.1."""
+"""Snakemake workflow for ConvergentDecidua MVR 0.1.
 
-configfile: "configs/datasets.yaml"
+The dataset registry (``configs/datasets.yaml``) is a top-level YAML
+**list**, not a mapping, so we cannot use Snakemake's built-in
+``configfile:`` directive (which requires a top-level mapping). Load it
+manually and bind to module-level constants the rule files can import.
+"""
 
+from pathlib import Path
+import yaml
+
+
+# ---------------------------------------------------------------------------
+# Load dataset registry
+# ---------------------------------------------------------------------------
+
+_REPO_ROOT = Path(workflow.basedir).parent
+_DATASETS_YAML = _REPO_ROOT / "configs" / "datasets.yaml"
+
+with _DATASETS_YAML.open() as fh:
+    DATASETS = yaml.safe_load(fh)
+
+# Per-assay accession lists used by rule files via `expand(...)`.
+SCRNA_ACCESSIONS = [
+    d["accession"]
+    for d in DATASETS
+    if any(tag in d.get("assay", "").lower() for tag in ("scrna", "snrna"))
+]
+ALL_ACCESSIONS = [d["accession"] for d in DATASETS]
+SPECIES_OF = {d["accession"]: d["species"] for d in DATASETS}
+
+
+# ---------------------------------------------------------------------------
+# Rule includes
+# ---------------------------------------------------------------------------
 
 include: "rules/fetch.smk"
 include: "rules/qc.smk"
@@ -10,6 +41,18 @@ include: "rules/integrate.smk"
 include: "rules/reports.smk"
 
 
+# ---------------------------------------------------------------------------
+# Default target — canonical Q2 artifacts
+# ---------------------------------------------------------------------------
+
 rule all:
     input:
-        "results/registry.parquet",
+        # Joint cross-species stromal atlas (canonical filename from Q2.3)
+        "results/integrated/stromal_cross_species.h5ad",
+        # Reports produced by `wombat generate-reports`
+        "results/reports/methods.md",
+        "results/reports/coverage.md",
+        "results/reports/qc_summary.md",
+        "results/reports/orthologs.md",
+        "results/reports/integration_qc.md",
+        "results/reports/manifest.md",

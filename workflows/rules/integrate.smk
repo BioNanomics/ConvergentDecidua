@@ -4,11 +4,8 @@
 rule integrate_stromal:
     input:
         backbone="results/orthologs/backbone.parquet",
-        qc=expand("results/qc/{acc}.h5ad", acc=[
-            d["accession"] for d in config
-            if "scrna" in d.get("assay", "").lower() or "snrna" in d.get("assay", "").lower()
-        ]),
+        qc=expand("results/qc/{acc}.h5ad", acc=SCRNA_ACCESSIONS),
     output:
-        h5ad="results/integrated/stromal_harmony.h5ad",
+        h5ad="results/integrated/stromal_cross_species.h5ad",
     shell:
         "wombat integrate --mode stromal --method harmony"
