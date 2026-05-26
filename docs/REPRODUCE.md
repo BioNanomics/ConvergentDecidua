@@ -3,15 +3,17 @@
 This guide walks an external reviewer from a clean machine to a reproduced
 human–mouse stromal decidualization atlas with checksums.
 
-> **Status:** Q1 of the 12-month plan — mouse scRNA ingest is the critical
-> path. If any step here fails, please open an issue with the failing command
-> and full output. That is the bar we hold ourselves to.
+> **Status:** Q2 closed (May 2026). Q3 is blocked on a pre-Q3
+> acceptance gate — see [`../PLAN.md`](../PLAN.md) and
+> [`q2_closeout.md`](q2_closeout.md) for what the current pipeline can
+> and cannot support scientifically. If any step here fails, please
+> open an issue with the failing command and full output.
 
 ---
 
 ## 1. Prerequisites
 
-- **Python** 3.9–3.12 (project tested on 3.9 and 3.11).
+- **Python** 3.11 or 3.12 (`requires-python = ">=3.11,<3.13"`).
 - **R** ≥ 4.1 with `Seurat` and `Matrix` packages — only needed for the
   GSE226417 mouse ingest. Skip if you do not need to re-ingest the mouse
   RData. The Docker image at `docker/Dockerfile` provides this pre-built.
@@ -109,27 +111,67 @@ back to this document.
 
 ## 4. Verifying a reproduction
 
+### What CI verifies on every push
+
+GitHub Actions (`.github/workflows/ci.yml`) runs four jobs on every
+push and pull request. These are **code-quality and workflow-syntax**
+checks; they do **not** download data or run the biological pipeline.
+
+| Job | What it checks | Why it is not "biological reproduction" |
+|---|---|---|
+| `lint` | `ruff check .` + `ruff format --check .` | Code style only |
+| `test` | `pytest -q` (default markers) | Unit tests on synthetic fixtures; `real_data` marker is **deselected** in `pyproject.toml` |
+| `validate-configs` | `wombat validate-config` | YAML schema only |
+| `validate-workflow` | `snakemake -n --snakefile workflows/Snakefile --forceall` | DAG resolution only — no rules execute |
+
+A green CI badge means "the code compiles, the unit tests pass on
+synthetic data, the configs parse, and the workflow DAG resolves."
+**It does not mean the biological pipeline has been re-run.**
+
+### What you (the reviewer) must run locally for real-data reproduction
+
+After running the full pipeline in §2:
+
 ```bash
-pytest -q                    # unit tests (no real data needed)
-pytest -m real_data -q       # smoke tests against results/ (skipped without data)
+pytest -m real_data -q          # smoke tests against results/
+                                # (skipped in CI; required here)
 ```
 
 Key real-data assertions:
 
-- `results/integrated/stromal_harmony.h5ad` exists and contains both
-  `human` and `mouse` in `.obs.species`.
+- `results/integrated/stromal_cross_species.h5ad` exists and contains
+  both `human` and `mouse` in `.obs.species`
+  (`stromal_harmony.h5ad` is a symlink for back-compat).
+- Mouse stromal recall ≥ 60 % on GSE226417 UE_DSC
+  (`test_mouse_stromal_recall`).
 - `results/reports/manifest.csv` has a 64-char sha256 for every row.
-- `results/reports/coverage.md` only marks an accession as `integrated=True`
-  when its cells actually appear in the integrated h5ad.
+- `results/reports/coverage.md` only marks an accession as
+  `integrated=True` when its cells actually appear in the integrated
+  h5ad.
+
+If any of those fail, please open an issue with the command and the
+full output.
 
 ---
 
-## 5. Known limitations (Q1)
+## 5. Known limitations (post-Q2)
 
-- **scATAC (GSE183771)** is in scope for Q2; ingest scaffolding exists but
-  joint analysis is not yet runnable end-to-end.
-- **E-MTAB-11491** (mouse, 644 per-sample files) is a Q2 stretch fallback,
-  not a Q1 dependency. GSE226417 alone supplies the mouse stromal cells.
-- **PRL** has no 1:1 mouse ortholog; the mouse decidual-prolactin family
-  (`Prl8a2`, `Prl3c1`, `Prl3d1`) will be added via per-species score
-  overrides in Q3.
+- **Cross-species mixing (LISI ≈ 1.00).** Harmony does not produce a
+  shared embedding on the current joint feature space. Pre-Q3 gate
+  items A + E address this.
+- **5 / 8 canonical decidual markers dropped by HVG selection**
+  (PGR, HAND2, WNT4, PRL, LEFTY2). Pre-Q3 gate item A introduces a
+  `protected_core` carveout. Do not interpret module-level conserved/
+  divergent claims from the current integrated h5ad.
+- **Orthology backbone is not externally validated** (g:Profiler
+  confirmed 0 / 16 168 Tier 1 mappings). Pre-Q3 gate item C requires
+  a per-gene spot-check memo for the protected core before any
+  comparative-biology claim.
+- **scATAC (GSE183771)** preprocessing primitives exist
+  (`src/qc/scatac.py`) but fetch + processing are deferred to Q3
+  stretch.
+- **PRL has no 1:1 mouse ortholog.** `species_overrides` handles
+  scoring; PRL/LEFTY2 are explicitly exploratory and will not carry
+  year-one claims (see `marker_recovery_plan.md`).
+- **Python 3.11 is the floor** (`requires-python = ">=3.11,<3.13"`).
+  3.9/3.10 are no longer supported.
