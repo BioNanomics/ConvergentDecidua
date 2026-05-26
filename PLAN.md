@@ -267,11 +267,135 @@ human scATAC linked to the same stromal cells. CI green end-to-end.
 
 ---
 
+## Q2 closeout review (May 2026) — honest assessment
+
+Q2 was a substantial tranche but it strengthened **infrastructure,
+annotation architecture, and diagnostic rigor** more than it produced
+biology. Three structural weaknesses must be addressed before any Q3
+conserved/divergent claim can be defended:
+
+1. **Integration geometry is not biologically informative yet.**
+   `integration_qc.md` shows species LISI ≈ 1.00 and dataset LISI ≈
+   1.00 — explicit "no mixing, separated clusters." Supports an honest-
+   diagnostics claim, not a robust cross-species atlas claim.
+2. **Joint feature space is too thin for a core-program argument.**
+   5 / 8 canonical markers (PGR, HAND2, WNT4, PRL, LEFTY2) are absent
+   from the joint var set, dropped by HVG selection. Any "conserved
+   core decidualization machinery" statement is currently underpowered.
+3. **Orthology layer is weakly externally validated.** `orthologs.md`
+   notes g:Profiler confirmed 0 / 16,168 Tier 1 mappings. Backbone is
+   not invalidated, but reviewers will not accept "mapped orthologs
+   exist → comparative biology is secure" without per-gene spot-checks
+   for the genes that carry the narrative.
+
+Additional clarifications:
+
+- **"CI green" means code-quality + workflow-syntax green.** Real-data
+  tests are skipped by default in CI (`real_data` marker excluded in
+  `pyproject.toml`). End-to-end biological reproduction is not yet
+  CI-enforced.
+- **The 66.7% mouse recall improvement is an annotation/mapping
+  correction, not a biological discovery.** GSE226417 is mixed
+  epithelial + stromal by design; the gain comes from `species_overrides`
+  + hierarchical lineage gating. Describe as recalibration, not yield.
+
+**Bottom-line:** Q2 establishes a defensible *resource / framework*
+trajectory. It does not yet support an *evolutionary-biology* claim.
+The safe central message today is: "we built and stress-tested a
+comparative atlas framework and surfaced the bottlenecks for rigorous
+cross-species decidualization analysis." Saying "we have identified
+conserved vs divergent decidual programs" is premature.
+
+## Pre-Q3 acceptance gate (must pass before Q3.1 begins)
+
+Set this gate now so Q3 does not become another tooling pile. Q3.1 work
+is **blocked** until all four items are checked.
+
+### Gate item A — Separate geometry from biology in the integrated object
+
+The current pipeline conflates HVG selection (a geometry concern, for
+PCA/Harmony) with the gene set retained for downstream biological
+interpretation. Fix:
+
+- [ ] Build PCA + Harmony on HVGs as today, but **retain the full joined
+  Tier 1 gene space** (or at minimum a protected core panel) in the
+  integrated h5ad's `.X` / `.raw` so marker recovery, module scoring,
+  and pseudobulk comparisons see the full gene space. Touchpoint:
+  `src/cell_states/integrate.py`.
+- [ ] Define the **protected core decidual panel** for year-one claims:
+  `PGR, FOXO1, HAND2, WNT4, IGFBP1, IL15` (the cleanest Tier 1
+  orthology cases). Register in `configs/markers.yaml` under a new
+  `protected_core` key. Force-include in the integrated object
+  regardless of HVG selection.
+- [ ] Split marker narrative: **core** = the six above (ortholog-clean,
+  carry year-one claims). **Exploratory** = PRL family, LEFTY2
+  (paralog-expanded / Tier 2; do not let them carry the main claim).
+
+### Gate item B — Drop-audit in integration QC report
+
+- [ ] Extend `src/reports/integration_qc.py` so the canonical-marker
+  table labels each missing gene with the **reason**: `lost_orthology`,
+  `lost_inner_join`, or `lost_hvg`. Today the report only says
+  "absent." Reviewers and future-us need to know where it fell out.
+- [ ] Add a regression test in `tests/test_real_data.py` that asserts
+  all six protected-core markers survive into the integrated analysis
+  layer (`adata_integrated.var_names`). Floor, not aspirational.
+
+### Gate item C — Ortholog spot-check memo
+
+- [ ] Write `docs/ortholog_spotcheck.md`: for each gene in the protected
+  core panel, list the human Ensembl ID, mouse Ensembl ID, source
+  (Tier 1 backbone), and an independent cross-check (Ensembl Compara
+  web entry URL + one literature citation confirming 1:1 orthology).
+  Two pages max. No code change required; it is a manual evidence
+  trail for the manuscript and a reviewer-defense doc.
+
+### Gate item D — Honest reproducibility statement
+
+- [ ] Update `docs/REPRODUCE.md` (and the README "CI" badge section if
+  applicable) to distinguish:
+  - **Code-quality CI** (lint, format, unit tests, config validation,
+    workflow dry-run) — green on every push.
+  - **Real-data reproducibility** (`pytest -m real_data`, full
+    Snakemake DAG) — runs locally / on a populated `results/`; not
+    enforced by CI. List the exact commands a reviewer needs.
+
+### Gate item E — Re-evaluate integration strategy after A–D land
+
+- [ ] Re-run integration QC. If LISI is still ≈ 1.00 even with the
+  protected core preserved, **do not force biology through the
+  integrated UMAP**. Pivot the Q3 evidence chain to matched-state
+  module scores + pseudobulk comparisons on the preserved full gene
+  space. Decide and document in PLAN.md before opening Q3.1.
+
+### Q2 closeout deliverables (companions to the gate)
+
+- [ ] `docs/q2_closeout.md` — one page: what Q2 solved, what Q2 only
+  diagnosed, what remains blocked. Reuses the bullets from the
+  closeout review above; no new analysis.
+- [ ] `docs/marker_recovery_plan.md` — short action note for the five
+  missing markers (PGR, HAND2, WNT4, PRL, LEFTY2): which are
+  recoverable via Gate item A's HVG carveout vs which need Tier 2
+  orthology vs which stay exploratory.
+
+### Standing controls (do not relax in Q3)
+
+- Stage comparability across datasets (cycle-day matching, pregnancy-
+  day matching) before any cross-dataset claim.
+- Within-species batch sanity checks before any cross-species claim.
+- Trait-positive vs trait-negative species controls before any
+  evolutionary claim. (Out of scope for year one; do not pre-commit.)
+
+---
+
 ## Q3 (months 7–9) — Scoring validation + conserved/divergent modules
 
 **Goal:** Module-level conserved-vs-divergent calls with FDR, plus the
 conservative candidate-regulator shortlists. `species_overrides` moved
 earlier, so Q3 starts with statistically clean inputs.
+
+> **Blocked on pre-Q3 acceptance gate above.** Do not begin Q3.1 until
+> gate items A–E are checked.
 
 ### Q3.1 — Bulk-data score validation
 
@@ -358,8 +482,10 @@ earlier, so Q3 starts with statistically clean inputs.
 | Mouse stromal recall (~67% post-Q2.1) | 🟢 Resolved — Q2.4 hierarchical lineage gate + honest target (dataset is mixed UE+DSC by design) | Score-margin / celltypist optional, not blocking |
 | Python 3.9 compat bugs | 🟢 Resolved (Q2.2) | `requires-python = ">=3.11,<3.13"` |
 | Pre-existing lint debt breaks "CI green" claim | 🟢 Resolved (Q2.2) | All 11 errors fixed; CI now actually green |
-| **Cross-species LISI ≈ 1.00** (no mixing in Harmony embedding) | 🟠 Surfaced by Q2.4 QC report | Q3: bump `theta_species`, reserve canonical markers in HVG selection, evaluate scVI on small GPU |
-| **Canonical markers dropped by HVG selection** (PGR/HAND2/WNT4/PRL/LEFTY2 absent from joint var set) | 🟠 Surfaced by Q2.4 QC report | Q3: pre-register marker list and force-include in HVG selection (pseudo-HVG carveout) |
+| **Cross-species LISI ≈ 1.00** (no mixing in Harmony embedding) | 🟠 Surfaced by Q2.4 QC report | **Pre-Q3 gate item E:** re-evaluate after geometry/biology split; pivot to matched-state module-score + pseudobulk evidence if LISI stays ≈ 1.00. Do not force biology through integrated UMAP. |
+| **Canonical markers dropped by HVG selection** (PGR/HAND2/WNT4/PRL/LEFTY2 absent from joint var set) | 🟠 Surfaced by Q2.4 QC report; addressed by **pre-Q3 gate item A** | Separate HVG (geometry) from retained gene space (biology); register `protected_core` panel in `markers.yaml`; add drop-audit (gate item B) |
+| **Orthology layer not externally validated** (g:Profiler 0/16168 Tier 1 confirmations) | 🟠 New — surfaced in Q2 closeout review | **Pre-Q3 gate item C:** per-gene spot-check memo for protected core panel before any comparative-biology claim |
+| **"CI green" overstates reproducibility** (real-data tests skipped in CI) | 🟠 New — surfaced in Q2 closeout review | **Pre-Q3 gate item D:** REPRODUCE.md must split code-quality CI vs real-data repro |
 | scATAC slips into Q3 | 🟢 Acceptable | Capped to Q3 stretch; do not extend Q2 |
 | Human bulk validation dataset not selected | 🟡 Pending | Pick by end of Q2 |
 | Docker build cache invalidates on R upgrade | 🟢 Low | Multi-stage build if it becomes painful |
