@@ -2,6 +2,22 @@
 
 A reproducible comparative atlas for the evolution of decidualization.
 
+## Background
+
+The evolution of spontaneous decidualization represents one of the most intriguing examples of convergent evolution in mammalian reproductive biology. Across multiple distantly related mammalian lineages — including higher primates, several bat species, elephant shrews, and a limited number of additional taxa — the endometrium evolved the capacity to undergo cyclical decidualization prior to embryo implantation. In these species, decidual transformation is initiated as part of the reproductive cycle itself rather than being induced directly by embryonic attachment signals, as occurs in the majority of mammals.
+
+This transition fundamentally altered the temporal relationship between maternal tissues and embryonic invasion. Instead of responding reactively to implantation, the uterus began preparing proactively, establishing a hormonally regulated decidual state before the presence of an embryo was confirmed. In species exhibiting spontaneous decidualization, this cyclical preconditioning is tightly linked to menstruation, invasive placentation, and extensive maternal immune modulation. These traits are largely absent in closely related mammals with implantation-induced decidualization, suggesting that spontaneous decidualization evolved independently multiple times under similar selective pressures.
+
+The repeated emergence of this phenotype raises a central evolutionary question: what genetic and regulatory changes shift decidualization from an embryo-triggered event to an internally timed cyclic program?
+
+One prevailing hypothesis is that spontaneous decidualization evolved as a maternal adaptation to increasingly invasive trophoblast behavior. In this model, maternal tissues gained the ability to preemptively regulate implantation, constrain trophoblast invasion, and assess embryo quality before extensive placental integration occurred. Such a transition would require not merely changes in individual genes, but a rewiring of endocrine responsiveness, stromal cell differentiation programs, inflammatory signaling, and temporal regulatory networks governing the reproductive cycle.
+
+The convergent appearance of spontaneous decidualization across phylogenetically distant mammals creates a powerful natural experiment for comparative genomics. If similar phenotypes evolved independently, then shared molecular signatures may reveal the core genetic architectures capable of generating cyclical decidual timing. These signatures may include changes in cis-regulatory elements, progesterone responsiveness, transcription factor binding networks, epigenetic regulation, noncoding RNAs, or alterations in developmental timing genes controlling endometrial stromal cell fate transitions.
+
+This work investigates the genomic and regulatory basis of decidual timing by comparing species with spontaneous decidualization to closely related species retaining implantation-induced decidualization. Rather than focusing solely on genes associated with decidual identity, the emphasis here is on the evolution of timing itself: the transition from embryo-dependent activation to autonomous cyclical initiation. By identifying convergent regulatory changes across independently evolved menstruating lineages, it may be possible to uncover the minimal genetic circuitry required to transform decidualization into an anticipatory maternal program.
+
+Ultimately, understanding how spontaneous decidualization evolved may illuminate broader principles governing evolutionary changes in developmental timing, maternal-fetal conflict, reproductive immunology, and the evolution of complex endocrine-regulated cellular states.
+
 **CLI**: `wombat` · **Visualization**: DecidualAtlas (Streamlit) · **Current milestone**: MVR 0.1
 
 ## What this project does
