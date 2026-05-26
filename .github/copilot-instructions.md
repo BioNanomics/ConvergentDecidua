@@ -23,7 +23,26 @@ If you find yourself drafting a plan in session memory, stop and mirror it into 
 - **Data format**: AnnData (`.h5ad`) for single-cell, Parquet for tables, DuckDB for queries.
 - **Testing**: pytest. Tests in `tests/`.
 - **Linting**: ruff (config in `pyproject.toml`).
-- **CI**: GitHub Actions — lint, test, validate-configs.
+- **CI**: GitHub Actions — lint, test, validate-configs, validate-workflow.
+
+### Pre-commit verification (run before claiming "green" or committing)
+
+Both lint **and** format must be checked. `ruff check .` alone is not
+sufficient — CI runs `ruff format --check .` as a separate step and a
+single unformatted file will fail the build.
+
+```bash
+ruff check .              # lint rules
+ruff format --check .     # formatting — DO NOT SKIP
+pytest -q                 # unit tests
+pytest -m real_data -q    # real-data smoke tests (when results/ is populated)
+snakemake -n --snakefile workflows/Snakefile --forceall   # DAG dry-run
+```
+
+If `ruff format --check .` reports "Would reformat", run
+`ruff format <files>` and re-verify before committing. New files added
+mid-session are the usual culprit — always sweep formatting on every
+file touched in the change, not only on the modules you actively edited.
 
 ### Module layout
 
