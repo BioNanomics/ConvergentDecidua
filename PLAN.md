@@ -149,28 +149,37 @@ human scATAC linked to the same stromal cells. CI green end-to-end.
   2 iterations, batch variables = `['species', 'dataset']`,
   real_data suite 5/5.
 
-### Q2.4 — Integration QC + annotation rework — ⏳ IN PROGRESS
+### Q2.4 — Integration QC + annotation rework — ✅ DONE
 
 - [x] **Hierarchical lineage annotation.** Added a `cell_type_lineages`
   block to `configs/markers.yaml` and a two-pass assignment in
   `src/cell_states/annotate.py`: each cell first gets a `lineage`
   (stromal / epithelial / perivascular / endothelial / immune / other)
   by max-over-constituent-cell-type-scores, then the fine-grained
-  `cell_type` is picked within the winning lineage. This avoids the
-  vote-splitting failure mode where four stromal sub-types lose to
-  a single epithelial bucket.
+  `cell_type` is picked within the winning lineage. Avoids the
+  vote-splitting failure mode where four stromal sub-types lose to a
+  single epithelial bucket.
 - [x] **Honest recall target.** GSE226417 is "Uterine **Epithelial**
   AND Decidual Stromal" by design. The ~33% non-stromal fraction is
-  ~7,500 mouse cells that score genuinely epithelial (Muc1+Krt18+Epcam)
-  — not annotation failure. The original 80% aspiration in Q2.1
-  assumed a pure stromal sample; corrected here. Mouse recall holds at
-  66.7% (15,662 / 23,471) and the regression floor stays at 60%.
-- [ ] LISI / kBET species-mixing scores on the Harmony embedding
-  (harmonypy ships LISI; `src/reports/integration_qc.py`).
-- [ ] Per-cluster marker recovery table (top 10 genes / cluster vs.
-  canonical markers PGR/Pgr, FOXO1/Foxo1, IGFBP1/Igfbp1, decidual-
-  prolactin family) → `results/reports/integration_qc.md`.
-- [ ] Wire into `wombat generate-reports`.
+  ~7,500 cells that score genuinely epithelial (Muc1+Krt18+Epcam) —
+  not annotation failure. Mouse recall holds at 66.7%
+  (15,662 / 23,471) and the regression floor stays at 60%.
+- [x] **`src/reports/integration_qc.py`** — new module that emits
+  `results/reports/integration_qc.md` with: (a) LISI mixing on
+  `obsm['X_pca_harmony']` for `species` and `dataset`, with a
+  qualitative mixing label, (b) per-dataset / per-lineage /
+  per-cell_type composition table, (c) canonical-marker recovery
+  (in-joint-var flag + per-species fraction expressing). Uses
+  `harmonypy.lisi.compute_lisi`; subsamples to 5k cells for speed.
+- [x] **Wired into `wombat generate-reports`.** Added `tabulate` to
+  the core dependency list (required by `pandas.DataFrame.to_markdown`).
+- [x] **Findings surfaced** (the report did its job — see new Q3
+  risks below):
+  - LISI ≈ 1.00 on both `species` and `dataset` → effectively zero
+    cross-species mixing in the current Harmony embedding.
+  - 5 / 8 canonical decidual markers (PGR, HAND2, WNT4, PRL, LEFTY2)
+    are missing from the joint var set — dropped during HVG selection.
+  - Follow-ups tracked as Q3 risks, not Q2 blockers.
 
 ### Q2.5 — scATAC (GSE183771, human-only)
 
@@ -298,8 +307,10 @@ earlier, so Q3 starts with statistically clean inputs.
 | Risk | Status | Mitigation |
 |---|---|---|
 | Mouse stromal recall (~67% post-Q2.1) | 🟢 Resolved — Q2.4 hierarchical lineage gate + honest target (dataset is mixed UE+DSC by design) | Score-margin / celltypist optional, not blocking |
-| Python 3.9 compat bugs | � Resolved (Q2.2) | `requires-python = ">=3.11,<3.13"` |
+| Python 3.9 compat bugs | 🟢 Resolved (Q2.2) | `requires-python = ">=3.11,<3.13"` |
 | Pre-existing lint debt breaks "CI green" claim | 🟢 Resolved (Q2.2) | All 11 errors fixed; CI now actually green |
+| **Cross-species LISI ≈ 1.00** (no mixing in Harmony embedding) | 🟠 Surfaced by Q2.4 QC report | Q3: bump `theta_species`, reserve canonical markers in HVG selection, evaluate scVI on small GPU |
+| **Canonical markers dropped by HVG selection** (PGR/HAND2/WNT4/PRL/LEFTY2 absent from joint var set) | 🟠 Surfaced by Q2.4 QC report | Q3: pre-register marker list and force-include in HVG selection (pseudo-HVG carveout) |
 | scATAC slips into Q3 | 🟢 Acceptable | Capped to Q3 stretch; do not extend Q2 |
 | Human bulk validation dataset not selected | 🟡 Pending | Pick by end of Q2 |
 | Docker build cache invalidates on R upgrade | 🟢 Low | Multi-stage build if it becomes painful |

@@ -377,6 +377,7 @@ def generate_reports() -> None:
     from pathlib import Path
 
     from src.reports.coverage import generate_coverage_report
+    from src.reports.integration_qc import generate_integration_qc
     from src.reports.manifest import generate_manifest
     from src.reports.methods import generate_methods_report
     from src.reports.ortholog_report import generate_ortholog_report
@@ -399,6 +400,13 @@ def generate_reports() -> None:
 
     generate_ortholog_report(results_dir, report_dir / "orthologs.md")
     console.print("[green]  ✓ Ortholog report[/green]")
+
+    generate_integration_qc(
+        results_dir / "integrated" / "stromal_cross_species.h5ad",
+        report_dir / "integration_qc.md",
+        backbone_path=results_dir / "orthologs" / "backbone.parquet",
+    )
+    console.print("[green]  ✓ Integration QC report[/green]")
 
     generate_manifest(results_dir, report_dir / "manifest.md")
     console.print("[green]  ✓ Release manifest[/green]")
