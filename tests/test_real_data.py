@@ -139,3 +139,64 @@ def test_coverage_matches_disk():
                         f"the integrated h5ad ({sorted(actual)})"
                     )
     _ = pd  # keep import for future expansion
+
+
+@REAL_DATA
+def test_protected_core_markers_survive():
+    """Pre-Q3 gate item A/B regression: the protected core decidual
+    panel must survive HVG selection and remain in the integrated
+    h5ad's ``var_names``.
+
+    Source of truth: ``configs/markers.yaml::protected_core``. Any
+    gene listed there that is **absent** from the joint upstream
+    var set (so the HVG carveout cannot recover it) is reported as
+    a skip with the explanation, not a failure — that case requires
+    an orthology or upstream-QC fix, not an integration-code fix.
+    """
+    p = RESULTS / "integrated" / "stromal_harmony.h5ad"
+    if not p.exists():
+        pytest.skip("integrated h5ad missing")
+
+    from wombat.config import load_config
+
+    markers = load_config("markers")
+    core = markers.get("protected_core") if isinstance(markers, dict) else None
+    if not core:
+        pytest.skip("protected_core not defined in configs/markers.yaml")
+
+    import anndata as ad
+
+    a = ad.read_h5ad(p, backed="r")
+    try:
+        var_set = {str(v) for v in a.var_names}
+    finally:
+        a.file.close()
+
+    # Recoverable = present in at least one upstream processed h5ad
+    # (so the HVG carveout in integrate.py could have force-included it).
+    processed_dir = RESULTS / "processed"
+    upstream: set[str] = set()
+    if processed_dir.exists():
+        for ph in processed_dir.glob("*.h5ad"):
+            ph_a = ad.read_h5ad(ph, backed="r")
+            try:
+                upstream |= {str(v).upper() for v in ph_a.var_names}
+            finally:
+                ph_a.file.close()
+
+    recoverable = [g for g in core if g.upper() in upstream] if upstream else core
+    not_recoverable = sorted(set(core) - set(recoverable))
+    missing_recoverable = sorted(g for g in recoverable if g not in var_set)
+
+    if not_recoverable and not missing_recoverable:
+        pytest.skip(
+            "All recoverable protected-core markers present; the following "
+            f"are upstream-absent (not an integration bug): {not_recoverable}"
+        )
+
+    assert not missing_recoverable, (
+        "Protected-core markers dropped from integrated var set despite "
+        f"being present upstream — HVG carveout is broken. Missing: "
+        f"{missing_recoverable}. Upstream-absent (out of scope): "
+        f"{not_recoverable}."
+    )

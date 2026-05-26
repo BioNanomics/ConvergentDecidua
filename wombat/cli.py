@@ -298,11 +298,16 @@ def integrate(mode: str, method: str, orthology_tier: str) -> None:
         raise SystemExit(1)
 
     console.print(f"[blue]Integrating {len(stromal_list)} datasets ({method})...[/blue]")
+    markers_cfg = load_config("markers")
+    protected_core = markers_cfg.get("protected_core") if isinstance(markers_cfg, dict) else None
+    if protected_core:
+        console.print(f"[dim]  Protected-core panel: {protected_core}[/dim]")
     integrated = integrate_stromal(
         stromal_list,
         backbone_path,
         method=method,
         orthology_tier=int(orthology_tier),
+        protected_core=protected_core,
     )
 
     canonical_path.parent.mkdir(parents=True, exist_ok=True)

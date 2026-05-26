@@ -23,6 +23,7 @@ def integrate_stromal(
     method: str = "harmony",
     n_hvg: int = 3000,
     orthology_tier: int = 1,
+    protected_core: list[str] | None = None,
 ) -> ad.AnnData:
     """Integrate stromal datasets across species.
 
@@ -42,11 +43,24 @@ def integrate_stromal(
         ``12`` = include Tier 2 orthogroups (relaxed; recovers PRL family,
         LEFTY2, MUC1, etc. for cross-species gene-space). Use ``12`` when
         joint embedding loses too many decidual markers.
+    protected_core : list[str] | None
+        Canonical marker genes that must survive into the returned
+        AnnData's ``var_names`` regardless of HVG selection. Used to
+        decouple **geometry** (PCA/Harmony on HVGs) from **biology**
+        (downstream marker recovery and module scoring on the full
+        joint gene space). See pre-Q3 gate item A in ``PLAN.md``. The
+        default ``None`` reproduces the legacy HVG-only behaviour.
 
     Returns
     -------
     ad.AnnData
-        Integrated AnnData with joint embedding in ``.obsm["X_integrated"]``.
+        Integrated AnnData. When ``protected_core`` is provided (or
+        ``configs/markers.yaml::protected_core`` is loaded by the
+        caller), ``.X`` carries the **full joint gene space**
+        (log1p-normalized) and HVG geometry lives in
+        ``.obsm['X_pca' | 'X_pca_harmony' | 'X_umap']`` +
+        ``.obsp[...]``. Without ``protected_core``, behaviour matches
+        the legacy HVG-subset-only output.
     """
     # Step 1: Map all datasets to common gene space via backbone
     backbone = pq.read_table(backbone_path).to_pandas()
@@ -73,12 +87,36 @@ def integrate_stromal(
     )
     logger.info("Combined: %d cells × %d genes", combined.n_obs, combined.n_vars)
 
-    # Step 3: Re-normalize and HVG
+    # Step 3: Re-normalize and HVG selection
     if "counts" in combined.layers:
         combined.X = combined.layers["counts"].copy()
     sc.pp.normalize_total(combined, target_sum=1e4)
     sc.pp.log1p(combined)
     sc.pp.highly_variable_genes(combined, n_top_genes=min(n_hvg, combined.n_vars))
+
+    # Geometry / biology split (pre-Q3 gate item A): force-include the
+    # protected core panel in the HVG set so canonical markers survive
+    # into the integrated h5ad. Snapshot the FULL joint gene space
+    # (log1p-normalized) before subsetting to HVGs, and re-attach the
+    # HVG-based embeddings to that full-gene object at the end.
+    protected_core = protected_core or []
+    forced = [g for g in protected_core if g in combined.var_names]
+    if forced:
+        combined.var.loc[forced, "highly_variable"] = True
+        logger.info("Protected-core force-included in HVG set: %s", forced)
+    missing_core = sorted(set(protected_core) - set(forced))
+    if missing_core:
+        logger.warning(
+            "Protected-core genes absent from joint var set (upstream loss, "
+            "cannot be recovered by HVG carveout): %s",
+            missing_core,
+        )
+
+    # Snapshot full joint gene space for the biology layer. We use a
+    # plain copy (not .raw) so downstream consumers keep a normal .X /
+    # .var interface and can read X[:, gene] without .raw indirection.
+    full_combined = combined.copy() if protected_core else None
+
     combined = combined[:, combined.var["highly_variable"]].copy()
     sc.pp.scale(combined, max_value=10)
     sc.tl.pca(combined, n_comps=min(50, combined.n_obs - 1, combined.n_vars - 1))
@@ -97,6 +135,30 @@ def integrate_stromal(
     sc.pp.neighbors(combined, use_rep=rep_key)
     sc.tl.umap(combined)
     combined.obsm["X_integrated"] = combined.obsm[rep_key]
+
+    # Step 6: Re-attach HVG geometry to the full-gene-space object so
+    # the saved h5ad keeps the full joint var set for marker recovery,
+    # module scoring, and pseudobulk comparisons.
+    if full_combined is not None:
+        for key in ("X_pca", rep_key, "X_integrated", "X_umap"):
+            if key in combined.obsm:
+                full_combined.obsm[key] = combined.obsm[key]
+        for key in ("distances", "connectivities"):
+            if key in combined.obsp:
+                full_combined.obsp[key] = combined.obsp[key]
+        if "neighbors" in combined.uns:
+            full_combined.uns["neighbors"] = combined.uns["neighbors"]
+        full_combined.uns["hvg_used_for_geometry"] = list(combined.var_names)
+        full_combined.uns["protected_core_forced"] = forced
+        logger.info(
+            "Integration complete (%s): %d cells, %d genes (full joint space; "
+            "HVG geometry = %d genes)",
+            method,
+            full_combined.n_obs,
+            full_combined.n_vars,
+            combined.n_vars,
+        )
+        return full_combined
 
     logger.info("Integration complete (%s): %d cells", method, combined.n_obs)
     return combined

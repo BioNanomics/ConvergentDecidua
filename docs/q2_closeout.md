@@ -36,20 +36,32 @@
 ## What Q2 only diagnosed (did not fix)
 
 The Q2.4 integration QC report did its job: it surfaced three structural
-weaknesses that the rest of Q2 did not have scope to repair.
+weaknesses, two of which the pre-Q3 acceptance gate (`PLAN.md`) has
+since repaired (gate items A + B) and one of which remains open
+(gate item E, embedding mixing).
 
-- **Cross-species mixing is effectively zero.** Both
-  `species` and `dataset` LISI are 1.00 on the Harmony embedding
-  (median over 5 000 cells). "No mixing, separated clusters." See
-  `results/reports/integration_qc.md`.
-- **5 / 8 canonical markers are absent from the joint var set.**
-  `PGR`, `HAND2`, `WNT4`, `PRL`, `LEFTY2` did not survive HVG selection.
-  Of the three that did, `IGFBP1` shows **0 %** expression in mouse —
-  a separate but related signal of cross-species mismatch.
-- **Orthology backbone has no external confirmations.**
-  `results/reports/orthologs.md` reports g:Profiler confirmed
-  **0 / 16 168** Tier 1 mappings. The backbone is not invalidated, but
-  it is not externally validated either.
+- ~~**5 / 8 canonical markers absent from joint var.**~~ **Resolved by
+  gate item A.** Integrated h5ad now carries the full Tier 1 joint
+  gene space (11,507 genes) with HVG geometry preserved in `obsm`.
+  All six protected-core markers (PGR, FOXO1, HAND2, WNT4, IGFBP1,
+  IL15) recovered with real biological signal: PGR 31.9% human /
+  85.5% mouse, HAND2 68.8% / 80.6%, WNT4 30.3% / 60.8%, etc.
+  PRL / LEFTY2 remain `lost_hvg` (intentionally — exploratory only,
+  paralog-ambiguous).
+- **IGFBP1 expressed in 0 % of mouse cells** in the recovered space.
+  Separate finding flagged in `marker_recovery_plan.md` for an
+  orthology + stage check (likely `Igfbp1` case/alias or stage
+  mismatch, not biology) before any IGFBP1-based claim.
+- **Cross-species mixing is still effectively zero.** Both `species`
+  and `dataset` LISI remain at 1.00 on the Harmony embedding even
+  with protected-core in HVGs. Gate item E decision (locked in
+  `PLAN.md`): **do not force biology through the integrated UMAP.**
+  Q3 evidence chain pivots to matched-state module scores +
+  pseudobulk on the preserved full gene space.
+- **Orthology backbone is not externally validated**
+  (g:Profiler 0 / 16 168 Tier 1 confirmations). Gate item C
+  (`docs/ortholog_spotcheck.md`) is the remaining open gate item;
+  must land before any comparative-biology claim.
 
 ## What remains blocked
 

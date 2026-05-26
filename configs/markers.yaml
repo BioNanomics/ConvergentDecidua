@@ -2,6 +2,21 @@
 # See README.md §8 (cell-state ontology) and §9 (scoring modules).
 # Human gene symbols — map to other species via ortholog backbone.
 
+# Protected core decidual panel for year-one claims.
+# These genes are force-included in the integrated h5ad's gene space
+# regardless of HVG selection (see src/cell_states/integrate.py and
+# pre-Q3 gate item A in PLAN.md). They are the cleanest Tier 1
+# orthology cases and underpin any "core decidual machinery"
+# statement in the manuscript. Do NOT add paralog-ambiguous genes
+# (PRL family, LEFTY2) here — those stay exploratory.
+protected_core:
+  - PGR
+  - FOXO1
+  - HAND2
+  - WNT4
+  - IGFBP1
+  - IL15
+
 # Lineage grouping for hierarchical annotation. The annotator first
 # assigns each cell to a lineage (max over constituent cell-type scores),
 # then picks the fine-grained cell_type within that lineage. This avoids

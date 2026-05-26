@@ -317,19 +317,22 @@ The current pipeline conflates HVG selection (a geometry concern, for
 PCA/Harmony) with the gene set retained for downstream biological
 interpretation. Fix:
 
-- [ ] Build PCA + Harmony on HVGs as today, but **retain the full joined
+- [x] Build PCA + Harmony on HVGs as today, but **retain the full joined
   Tier 1 gene space** (or at minimum a protected core panel) in the
   integrated h5ad's `.X` / `.raw` so marker recovery, module scoring,
   and pseudobulk comparisons see the full gene space. Touchpoint:
-  `src/cell_states/integrate.py`.
-- [ ] Define the **protected core decidual panel** for year-one claims:
-  `PGR, FOXO1, HAND2, WNT4, IGFBP1, IL15` (the cleanest Tier 1
-  orthology cases). Register in `configs/markers.yaml` under a new
-  `protected_core` key. Force-include in the integrated object
-  regardless of HVG selection.
-- [ ] Split marker narrative: **core** = the six above (ortholog-clean,
+  `src/cell_states/integrate.py`. **Done:** integrated h5ad now
+  carries 11,507 genes (full Tier 1 joint space) with HVG geometry
+  preserved in `obsm['X_pca'/'X_pca_harmony'/'X_umap']`;
+  `uns['hvg_used_for_geometry']` records the 3,003 HVGs.
+- [x] Define the **protected core decidual panel** for year-one claims:
+  `PGR, FOXO1, HAND2, WNT4, IGFBP1, IL15`. Registered in
+  `configs/markers.yaml::protected_core`. Force-included in the
+  integrated object regardless of HVG selection.
+- [x] Split marker narrative: **core** = the six above (ortholog-clean,
   carry year-one claims). **Exploratory** = PRL family, LEFTY2
   (paralog-expanded / Tier 2; do not let them carry the main claim).
+  Documented in `docs/marker_recovery_plan.md`.
 
 ### Gate item B — Drop-audit in integration QC report
 
@@ -339,10 +342,12 @@ interpretation. Fix:
       after `133a047`. Real-data run confirms all 5 missing canonical
       markers (PGR, HAND2, WNT4, PRL, LEFTY2) are `lost_hvg` — i.e.
       the HVG carveout in gate item A will recover them.
-- [ ] Add a regression test in `tests/test_real_data.py` that asserts
+- [x] Add a regression test in `tests/test_real_data.py` that asserts
       all six protected-core markers survive into the integrated analysis
       layer (`adata_integrated.var_names`). Floor, not aspirational.
-      **Lands with gate item A** (the test asserts what A makes true).
+      Done as `test_protected_core_markers_survive`; skips upstream-
+      absent genes (those require an orthology fix, not an integration
+      fix) and asserts on recoverable ones only.
 
 - [ ] Write `docs/ortholog_spotcheck.md`: for each gene in the protected
   core panel, list the human Ensembl ID, mouse Ensembl ID, source
@@ -393,8 +398,9 @@ interpretation. Fix:
 conservative candidate-regulator shortlists. `species_overrides` moved
 earlier, so Q3 starts with statistically clean inputs.
 
-> **Blocked on pre-Q3 acceptance gate above.** Do not begin Q3.1 until
-> gate items A–E are checked.
+> **Blocked on pre-Q3 acceptance gate above.** Gate items A, B, D
+> and E are closed; gate item C (ortholog spot-check memo) remains.
+> Do not begin Q3.1 until C is also checked.
 
 ### Q3.1 — Bulk-data score validation
 
@@ -482,7 +488,8 @@ earlier, so Q3 starts with statistically clean inputs.
 | Python 3.9 compat bugs | 🟢 Resolved (Q2.2) | `requires-python = ">=3.11,<3.13"` |
 | Pre-existing lint debt breaks "CI green" claim | 🟢 Resolved (Q2.2) | All 11 errors fixed; CI now actually green |
 | **Cross-species LISI ≈ 1.00** (no mixing in Harmony embedding) | 🟠 Surfaced by Q2.4 QC report | **Pre-Q3 gate item E:** re-evaluate after geometry/biology split; pivot to matched-state module-score + pseudobulk evidence if LISI stays ≈ 1.00. Do not force biology through integrated UMAP. |
-| **Canonical markers dropped by HVG selection** (PGR/HAND2/WNT4/PRL/LEFTY2 absent from joint var set) | 🟠 Surfaced by Q2.4 QC report; addressed by **pre-Q3 gate item A** | Separate HVG (geometry) from retained gene space (biology); register `protected_core` panel in `markers.yaml`; add drop-audit (gate item B) |
+| **Canonical markers dropped by HVG selection** (PGR/HAND2/WNT4/PRL/LEFTY2 absent from joint var set) | � Resolved by pre-Q3 gate item A (geometry/biology split + `protected_core` carveout in `integrate.py`). Protected core (PGR/FOXO1/HAND2/WNT4/IGFBP1/IL15) all present in integrated h5ad. PRL/LEFTY2 remain exploratory. | n/a |
+| **IGFBP1 0% expression in mouse** (separate signal flagged by Q2.4 report) | 🟠 Orthology / stage check pending (`docs/marker_recovery_plan.md`) | Q3 prerequisite for any IGFBP1-based claim; verify `Igfbp1` symbol/case + per-cycle_stage pseudobulk |
 | **Orthology layer not externally validated** (g:Profiler 0/16168 Tier 1 confirmations) | 🟠 New — surfaced in Q2 closeout review | **Pre-Q3 gate item C:** per-gene spot-check memo for protected core panel before any comparative-biology claim |
 | **"CI green" overstates reproducibility** (real-data tests skipped in CI) | 🟠 New — surfaced in Q2 closeout review | **Pre-Q3 gate item D:** REPRODUCE.md must split code-quality CI vs real-data repro |
 | scATAC slips into Q3 | 🟢 Acceptable | Capped to Q3 stretch; do not extend Q2 |
