@@ -233,9 +233,7 @@ def _render_markdown(metrics: dict, composition, recovery) -> str:
                     label = "good"
             else:
                 label = "n/a"
-            lines.append(
-                f"| {key} | {med:.2f} | {mean:.2f} | {n_cat or 'n/a'} | {label} |"
-            )
+            lines.append(f"| {key} | {med:.2f} | {mean:.2f} | {n_cat or 'n/a'} | {label} |")
 
     # Flag severe non-mixing inline so reviewers see it without
     # having to interpret LISI numbers themselves.

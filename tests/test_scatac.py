@@ -26,7 +26,7 @@ def _make_peak_adata(n_cells: int = 6, n_peaks: int = 5):
         {
             "chrom": ["chr1"] * n_peaks,
             "start": [100, 500, 1500, 3000, 5000],
-            "end":   [200, 600, 1600, 3100, 5100],
+            "end": [200, 600, 1600, 3100, 5100],
         },
         index=[f"peak{i}" for i in range(n_peaks)],
     )
