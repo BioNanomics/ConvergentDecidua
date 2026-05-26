@@ -256,11 +256,14 @@ human scATAC linked to the same stromal cells. CI green end-to-end.
 - [x] FOXO1 / IGFBP1 / IL15 recovered in the joint var set across
   both species. PGR / HAND2 / WNT4 / PRL / LEFTY2 lost to HVG
   selection — Q3 fix.
-- [ ] Human scATAC gene-activity object — infrastructure ready
-  (`src/qc/scatac.py::gene_activity`, sparse-safe TF-IDF, unit tests);
-  GSE183771 fetch deferred to Q3 per the Q2.5 scope cap.
-- [ ] `ruff check .` green; CI green on PRs.
-- [ ] `pytest -m real_data` still 4/4 plus the new recall test.
+- [x] Human scATAC gene-activity **infrastructure** ready
+  (`src/qc/scatac.py::gene_activity`, sparse-safe TF-IDF, unit tests).
+  GSE183771 **fetch + processing** deferred to Q3 stretch per the
+  Q2.5 scope cap.
+- [x] `ruff check .` green locally; `validate-workflow` + `lint` +
+  `test` CI jobs green on push (verified on `530e9d7`).
+- [x] `pytest -m real_data` 5/5 (original 4 + `test_mouse_stromal_recall`).
+  `pytest -q` 6/6 (added 4 scATAC unit tests in Q2.5).
 
 ---
 
