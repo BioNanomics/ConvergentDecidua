@@ -59,6 +59,21 @@ and ng/mL for rodents — **not** unit-converted across species).
 
 ![Mouse estrous cycle hormones](plots/cycle_mouse.png)
 
+> **Note on x-axis ordering (non-textbook).** Textbook estrous-cycle
+> diagrams conventionally start at **proestrus** and end at
+> **diestrus**. The plot above departs from that convention and uses
+> the order `diestrus → proestrus → estrus → metestrus`. This is
+> a deliberate choice, *not* the biological default, made so that
+> the rodent pre-ovulatory LH surge (proestrus) sits in the middle
+> of the panel at the same visual position as the human day-13 LH
+> surge in §2.1, making the four §2 panels readable as four
+> versions of the same phase shape. The cross-species axis in §3
+> already does this alignment quantitatively; §2 panels are
+> presented this way only for visual consistency. Readers used to
+> the textbook convention should mentally rotate the panel one step
+> to the left. Stage *durations* are still equal-width (the
+> duration-weighted normalization is the §6 next-iteration task).
+
 - E2 peaks at proestrus (~40 pg/mL) and falls through estrus into
   metestrus.
 - P4 peaks at **metestrus** (~15 ng/mL) — not at proestrus — reflecting
@@ -68,6 +83,10 @@ and ng/mL for rodents — **not** unit-converted across species).
 ### 2.3 Rat (4–5 day estrous cycle)
 
 ![Rat estrous cycle hormones](plots/cycle_rat.png)
+
+> **Same non-textbook x-axis ordering as §2.2.** The stages are
+> drawn as `diestrus → proestrus → estrus → metestrus` to keep
+> proestrus centred. See the note under §2.2 for the rationale.
 
 - Shape is broadly similar to mouse but with a higher proestrus P4
   spike (~30 ng/mL) reflecting the rat's stronger pre-ovulatory P4.

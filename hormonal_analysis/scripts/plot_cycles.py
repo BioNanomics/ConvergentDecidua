@@ -30,6 +30,18 @@ PLOTS = HERE / "plots"
 # -> metestrus -> diestrus).
 STAGE_ORDER = ["proestrus", "estrus", "metestrus", "diestrus"]
 
+# Display order for the per-species rodent plot. We DEPART from the
+# textbook proestrus -> diestrus order so the rodent plots can be
+# visually compared panel-to-panel against the human cycle plot in
+# section 2.1 of results.md. With this ordering, proestrus (the
+# rodent pre-ovulatory LH surge) sits in the middle of the plot at
+# the same visual position as the human day-13 LH surge, instead of
+# at the left edge. Readers should be aware this is NOT the
+# textbook estrous-cycle layout -- it is a deliberate alignment
+# choice for cross-panel readability and is annotated on the plot
+# itself.
+STAGE_DISPLAY_ORDER = ["diestrus", "proestrus", "estrus", "metestrus"]
+
 # Stage midpoints on the normalized 0..1 cycle axis, rotated so that
 # proestrus (rodent pre-ovulatory LH surge) aligns with the human
 # day-13 LH surge at position (13 - 1) / (28 - 1) = 0.444. The cycle
@@ -91,10 +103,13 @@ def _plot_species(species: str, df: pd.DataFrame) -> Path:
         x_label = "Cycle day"
         x_ticks = None
     elif coord_type == "stage":
-        sub = sub[sub["coordinate"].isin(STAGE_ORDER)].copy()
-        sub["x"] = sub["coordinate"].map(lambda s: STAGE_ORDER.index(s))
-        x_label = "Estrous stage"
-        x_ticks = (list(range(len(STAGE_ORDER))), STAGE_ORDER)
+        sub = sub[sub["coordinate"].isin(STAGE_DISPLAY_ORDER)].copy()
+        sub["x"] = sub["coordinate"].map(lambda s: STAGE_DISPLAY_ORDER.index(s))
+        x_label = (
+            "Estrous stage (non-textbook order: diestrus first, so the\n"
+            "proestrus LH surge aligns with the human day-13 surge in §2.1)"
+        )
+        x_ticks = (list(range(len(STAGE_DISPLAY_ORDER))), STAGE_DISPLAY_ORDER)
     elif coord_type == "normalized":
         sub["x"] = sub["coordinate"].astype(float)
         x_label = "Normalized cycle position (0 = start, 1 = end)"
