@@ -65,28 +65,40 @@
   tier: B
   source_datasets: [GSE155170]
 
-- name: bat_myotis
-  common_name: Little brown bat
-  taxon_id: 59463
-  genome_build: Myoluc2.0
+- name: bat_carollia
+  common_name: Seba's short-tailed bat  # Carollia perspicillata, Phyllostomidae
+  taxon_id: 40233
+  # Gene-ID space below is Myotis lucifugus, NOT Carollia: the GSE155170
+  # bat samples are biologically Carollia (confirmed by GEO sample metadata
+  # GSM4696524-5 "Bat Endometrium Individual 1-2", taxon Carollia
+  # perspicillata) but Marinic/Kin/Wagner aligned the reads to the Myotis
+  # lucifugus Ensembl reference (ENSMLUT transcript IDs) because no usable
+  # Carollia annotation existed when the paper was prepared. Trait label
+  # below tracks the BIOLOGICAL organism (phyllostomids menstruate and
+  # spontaneously decidualize); orthology lookups must still go through
+  # mlucifugus_gene_ensembl until Ensembl ships a Carollia annotation.
+  genome_build: Myoluc2.0  # alignment reference, not the source genome
   ensembl_release: 112
   ensembl_dataset: mlucifugus_gene_ensembl
   ensembl_prefix: mlucifugus
-  gene_id_prefix: ENSMLUG
-  menstruates: false  # vespertilionid bats do NOT menstruate (unlike phyllostomids)
-  spontaneous_decidualization: false
+  gene_id_prefix: ENSMLUG  # gene-level; counts are at ENSMLUT transcript
+                            # level and need tx2gene aggregation downstream
+  menstruates: true
+  spontaneous_decidualization: true
   tier: B
   source_datasets: [GSE155170]
   notes: |
-    Originally planned to use Carollia perspicillata (phyllostomid,
-    trait-positive). Inspection of GSE155170 ingested data revealed
-    transcript IDs prefixed ENSMLUT (Myotis lucifugus, vespertilionid)
-    — Marinic/Kin/Wagner aligned the bat samples to Myotis, not
-    Carollia. This means the "bat" arm of GSE155170 is actually
-    **trait-negative**, weakening but not invalidating the convergence
-    contrast. Carollia remains the desired trait-positive bat; a
-    separate ingest with Carollia-aligned data is required before the
-    Q4 trait-convergence figure can include a phyllostomid datum.
+    Discovery 2026-05-27: earlier project notes had this species as
+    Myotis lucifugus (vespertilionid, trait-negative). That was wrong
+    — the inference came from the ENSMLUT gene-ID prefix in the count
+    files, without checking the GEO sample-level taxon field. The GEO
+    record (GSE155170 / GSM4696524-5) explicitly names Carollia
+    perspicillata as the source organism; Myotis is just the alignment
+    reference. The biological identity governs the trait label, so
+    this entry now functions as the phyllostomid trait-positive datum
+    for Q4.2 (n=2 endometrial bulk RNA-seq individuals). This closes
+    the "phyllostomid bat sweep" Q4.2 gap todo without needing a new
+    dataset.
 
 - name: hamster
   common_name: Golden hamster

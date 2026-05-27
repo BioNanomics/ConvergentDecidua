@@ -239,7 +239,7 @@
     filename_species_map:
       Baboon: baboon
       Hamster: hamster
-      Bat: bat_myotis
+      Bat: bat_carollia
       Squirrel: ground_squirrel
       Mouse: mouse
   description: |

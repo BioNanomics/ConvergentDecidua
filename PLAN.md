@@ -721,7 +721,7 @@ datasets:**
   Hamster samples carry NCBI RefSeq IDs (NM_*), so a RefSeq→Ensembl
   bridge is required at the ortholog-mapping step.
 - [ ] Build human→{macaque, baboon, opossum, guinea_pig, hamster,
-  ground_squirrel, bat_myotis, tenrec, armadillo} ortholog backbones.
+  ground_squirrel, bat_carollia, tenrec, armadillo} ortholog backbones.
   Current `src/orthologs/ensembl.py` is hardcoded to human→mouse
   (only `mmusculus_homolog_*` BioMart attributes are wired up);
   generalize to use the `ensembl_prefix` field added to species.yaml
@@ -796,23 +796,35 @@ with the data in hand (baboon trait-positive from GSE155170 against
   GSE156125, GSE196825. Human data was pulled from
   reproductivecellatlas.org in already-aligned form for privacy.
   Net effect on trait-positive pool: {human, baboon, **cynomolgus
-  macaque**} — two independent catarrhines confirmed, phyllostomid
-  bat still pending.
+  macaque**, **Carollia perspicillata bat** (see next item)} — two
+  independent catarrhines confirmed and a phyllostomid.
 
-- [ ] **Phyllostomid bat sweep + author email.** GSE155170 "Bat"
-  samples are *Myotis lucifugus* (vespertilionid, trait-NEGATIVE
-  — ENSMLUT prefix), not *Carollia perspicillata* (phyllostomid,
-  trait-positive) as the Marinic/Kin/Wagner paper text suggested.
-  Action: (1) one-pass GEO + EuropePMC sweep for
-  Carollia/Phyllostomus/Desmodus/Artibeus endometrium or uterus
-  transcriptomes; (2) if empty, email Marinic/Kin/Wagner asking
-  whether Carollia BAMs ever existed (possible misfile). If both
-  return empty, **downgrade the phyllostomid bat from a Q4.2
-  requirement to a documented limitation** in
-  `docs/manuscript_outline.md`; the convergence test still has
-  independent trait-positive lineages from {human, baboon,
-  cynomolgus macaque (GSE180637)} — thin without a phyllostomid,
-  but defensible.
+- [x] **Phyllostomid bat sweep.** Resolved 2026-05-27 by querying GEO
+  E-utilities for Carollia/Phyllostomus/Desmodus/Artibeus endometrium
+  records. The very first hit was **GSE155170 itself** — the dataset
+  we had already ingested. GEO sample metadata
+  (GSM4696524 "Bat Endometrium Individual 1", GSM4696525 "Bat
+  Endometrium Individual 2") explicitly names *Carollia
+  perspicillata* (phyllostomid, **trait-positive**, menstruating)
+  as the source organism. The earlier project label of "Myotis
+  lucifugus, vespertilionid, trait-negative" was a bad inference
+  from the ENSMLUT gene-ID prefix in the count files; Marinic/Kin/
+  Wagner had simply aligned Carollia reads to the Myotis Ensembl
+  reference (no Carollia annotation existed). Fix applied:
+  `configs/species.yaml` `bat_myotis` block renamed to `bat_carollia`
+  with biological taxon 40233, `menstruates: true`,
+  `spontaneous_decidualization: true`; `gene_id_prefix` / Ensembl
+  pointers retained at `mlucifugus_gene_ensembl` since orthology has
+  to flow through that reference until Ensembl ships a Carollia
+  annotation; `configs/datasets.yaml` GSE155170
+  `filename_species_map: Bat: bat_carollia`. Re-ingest produced
+  `results/processed/GSE155170__bat_carollia.h5ad` (n=2). No author
+  email needed; no downgrade required. **Trait-positive pool final**:
+  {human, baboon, cynomolgus macaque (GSE180637), Carollia
+  perspicillata bat (GSE155170)} — the convergence test now has
+  three independent trait-positive lineages (catarrhine primate,
+  catarrhine primate, phyllostomid bat) against five trait-negative
+  rodents + opossum + tenrec.
 
 ### Q4.3 — cis-regulatory layer (Lynch hypothesis)
 
