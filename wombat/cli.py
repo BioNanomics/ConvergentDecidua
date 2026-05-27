@@ -228,6 +228,50 @@ def orthologs_build(no_gprofiler: bool) -> None:
     console.print(f"[green]✓ Backbone: {len(backbone)} rows → {output_path}[/green]")
 
 
+@orthologs.command("synteny-check")
+@click.option(
+    "--symbols",
+    default="",
+    help="Comma-separated anchor-species gene symbols. Defaults to "
+    "configs/markers.yaml::protected_core.",
+)
+@click.option(
+    "--targets",
+    default="mouse",
+    help="Comma-separated target species short names (e.g. mouse,rat).",
+)
+@click.option("--anchor", default="human", help="Anchor species short name.")
+def orthologs_synteny_check(symbols: str, targets: str, anchor: str) -> None:
+    """Per-locus 1:1 ortholog + alignment % identity via Ensembl REST.
+
+    Replaces the manual CGV eyeball loop for the protected-core
+    decidual panel. See ``src/orthologs/synteny.py``.
+    """
+    from pathlib import Path
+
+    from src.orthologs.synteny import run_synteny_check
+
+    project_root = Path(__file__).resolve().parent.parent
+    output_path = project_root / "results" / "orthologs" / "synteny_at_core_loci.parquet"
+
+    sym_list = [s.strip() for s in symbols.split(",") if s.strip()] or None
+    target_list = [t.strip() for t in targets.split(",") if t.strip()]
+
+    console.print(
+        f"[blue]Synteny check: anchor={anchor}, targets={target_list}, "
+        f"symbols={'protected_core' if sym_list is None else sym_list}[/blue]"
+    )
+    table = run_synteny_check(
+        output_path,
+        symbols=sym_list,
+        target_species=target_list,
+        anchor_species=anchor,
+    )
+    df = table.to_pandas()
+    hits = int(df["alignment_present"].sum())
+    console.print(f"[green]✓ {hits}/{len(df)} alignment-present rows → {output_path}[/green]")
+
+
 # ---------------------------------------------------------------------------
 # Integration & scoring commands
 # ---------------------------------------------------------------------------

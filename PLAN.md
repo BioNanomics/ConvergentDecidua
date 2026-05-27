@@ -389,6 +389,18 @@ interpretation. Fix:
       pseudobulk before drawing biological conclusions. Scoped to
       IGFBP1-based claims only — not a general Q3 blocker. Tracked in
       `docs/marker_recovery_plan.md`.
+- [x] **Per-locus alignment sanity check (automated).** `src/orthologs/synteny.py`
+      + `wombat orthologs synteny-check` query the Ensembl REST
+      `/homology/symbol/{species}/{symbol}` endpoint for each
+      `protected_core` gene against the configured target species and
+      record orthology type, % identity, and dN/dS to
+      `results/orthologs/synteny_at_core_loci.parquet`. Replaces the
+      manual CGV eyeball loop (CGV is pairwise-only and canvas-rendered;
+      Ensembl REST is multi-species and structured). Year-one default
+      target = `mouse`; spiny-mouse / bat partners can be enabled via
+      `--targets mouse,spiny_mouse` once their relevance is gated in
+      (see "Out of scope" in the Locked Decisions section above —
+      year-one runs human↔mouse only).
 
 ### Gate item D — Honest reproducibility statement
 
