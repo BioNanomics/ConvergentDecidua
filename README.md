@@ -4,17 +4,17 @@ A reproducible comparative atlas for the evolution of decidualization.
 
 ## Background
 
-The evolution of spontaneous decidualization represents one of the most intriguing examples of convergent evolution in mammalian reproductive biology. Across multiple distantly related mammalian lineages — including higher primates, several bat species, elephant shrews, and a limited number of additional taxa — the endometrium evolved the capacity to undergo cyclical decidualization prior to embryo implantation. In these species, decidual transformation is initiated as part of the reproductive cycle itself rather than being induced directly by embryonic attachment signals, as occurs in the majority of mammals.
+The repeated emergence of menstruation-associated spontaneous decidualization in distantly related mammals suggests a striking case of convergent evolution in reproductive timing. In humans and other menstruating species, endometrial stromal cells acquire a decidual phenotype as part of the reproductive cycle itself, before embryo implantation is confirmed. This differs from the condition in most mammals, where decidualization is induced locally by implantation or embryo-derived cues.
 
-This transition fundamentally altered the temporal relationship between maternal tissues and embryonic invasion. Instead of responding reactively to implantation, the uterus began preparing proactively, establishing a hormonally regulated decidual state before the presence of an embryo was confirmed. In species exhibiting spontaneous decidualization, this cyclical preconditioning is tightly linked to menstruation, invasive placentation, and extensive maternal immune modulation. These traits are largely absent in closely related mammals with implantation-induced decidualization, suggesting that spontaneous decidualization evolved independently multiple times under similar selective pressures.
+This shift altered the temporal relationship between maternal tissues and embryonic invasion. Rather than responding only after implantation begins, the uterus in spontaneously decidualizing species enters a hormonally regulated anticipatory stromal state. In many menstruating mammals, that cyclic preconditioning is associated with progesterone-dependent stromal differentiation, endometrial breakdown and repair, immune remodeling, and, in several lineages, invasive implantation. These traits are related but not interchangeable, and their evolutionary relationships remain part of the question.
 
-The repeated emergence of this phenotype raises a central evolutionary question: what genetic and regulatory changes shift decidualization from an embryo-triggered event to an internally timed cyclic program?
+One influential model proposes that spontaneous decidualization evolved as a maternal adaptation to increasingly invasive trophoblast behavior. Under this view, maternal tissues gained the ability to prepare for implantation in advance, regulate trophoblast invasion, and evaluate embryo quality before extensive placental integration. Such a transition would likely require changes not only in decidual marker genes, but in the regulatory architecture controlling progesterone responsiveness, stromal differentiation, inflammatory signaling, immune interaction, and reproductive-cycle timing.
 
-One prevailing hypothesis is that spontaneous decidualization evolved as a maternal adaptation to increasingly invasive trophoblast behavior. In this model, maternal tissues gained the ability to preemptively regulate implantation, constrain trophoblast invasion, and assess embryo quality before extensive placental integration occurred. Such a transition would require not merely changes in individual genes, but a rewiring of endocrine responsiveness, stromal cell differentiation programs, inflammatory signaling, and temporal regulatory networks governing the reproductive cycle.
+The key comparative test is not simply human versus mouse, but trait-positive lineages versus closely related trait-negative controls. If similar timing phenotypes evolved more than once, then those lineages may share cell-state and regulatory features absent from related species that retain implantation-induced decidualization.
 
-The convergent appearance of spontaneous decidualization across phylogenetically distant mammals creates a powerful natural experiment for comparative genomics. If similar phenotypes evolved independently, then shared molecular signatures may reveal the core genetic architectures capable of generating cyclical decidual timing. These signatures may include changes in cis-regulatory elements, progesterone responsiveness, transcription factor binding networks, epigenetic regulation, noncoding RNAs, or alterations in developmental timing genes controlling endometrial stromal cell fate transitions.
+This project therefore asks whether lineage-specific regulatory sequence changes plausibly shifted conserved stromal programs from embryo-induced activation toward more autonomous cyclic timing. Single-cell transcriptomics identifies the stromal cell states and gene programs whose deployment differs across species, while comparative genomics examines whether those expression differences track with candidate promoter, enhancer, or other noncoding changes predicted to alter transcription factor binding or chromatin activity.
 
-This work investigates the genomic and regulatory basis of decidual timing by comparing species with spontaneous decidualization to closely related species retaining implantation-induced decidualization. Rather than focusing solely on genes associated with decidual identity, the emphasis here is on the evolution of timing itself: the transition from embryo-dependent activation to autonomous cyclical initiation. By identifying convergent regulatory changes across independently evolved menstruating lineages, it may be possible to uncover the minimal genetic circuitry required to transform decidualization into an anticipatory maternal program.
+Rather than focusing solely on genes associated with decidual identity, the emphasis here is on the evolution of timing itself: the transition from embryo-dependent activation to autonomous cyclical initiation. The near-term goal is to build a reproducible evidence chain from cell-state-specific expression differences to candidate regulatory mutations that can be prioritized for downstream validation.
 
 Ultimately, understanding how spontaneous decidualization evolved may illuminate broader principles governing evolutionary changes in developmental timing, maternal-fetal conflict, reproductive immunology, and the evolution of complex endocrine-regulated cellular states.
 
@@ -22,7 +22,7 @@ Ultimately, understanding how spontaneous decidualization evolved may illuminate
 
 ## What this project does
 
-ConvergentDecidua builds a cross-species single-cell atlas to investigate how spontaneous decidualization evolved independently in menstruating mammals. The pipeline ingests public scRNA-seq, scATAC-seq, and bulk RNA-seq datasets from human and mouse, maps orthologs, integrates stromal cell populations, and scores 8 decidualization-related gene modules.
+ConvergentDecidua builds a cross-species atlas and comparative genomics workflow to investigate how spontaneous decidualization evolved in menstruating mammals. The pipeline ingests public scRNA-seq, scATAC-seq, and bulk RNA-seq datasets from human and mouse, maps orthologs, integrates stromal cell populations, and scores 8 decidualization-related gene modules. Its near-term goal is to connect cell-state-specific expression differences to candidate lineage-specific regulatory sequence changes associated with shifts in decidual timing.
 
 For the full scientific background — hypothesis, species rationale, dataset targets, AI model strategy (DeciduaAI), and long-term roadmap — see [BACKGROUND.md](BACKGROUND.md).
 
@@ -224,3 +224,8 @@ CI runs lint, test, and config validation on every push via GitHub Actions.
 ## License
 
 MIT
+
+
+## References
+
+- Reed, Beverly G., MD, and Bruce R. Carr, MD. [The Normal Menstrual Cycle and the Control of Ovulation](https://www.ncbi.nlm.nih.gov/books/NBK279054/). NCBI Bookshelf.
