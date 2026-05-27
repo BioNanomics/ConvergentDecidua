@@ -148,15 +148,30 @@ labels do not apply.
 ## 3. Cross-species comparison — normalized cycle position
 
 Cross-species plots place each species on a common 0..1 cycle-position
-axis (human: `(day - 1) / 27`; rodents: estrous-stage midpoints
-rotated so **proestrus sits at 0.43**, aligning the rodent
-pre-ovulatory LH surge with the human day-13 surge at
-`12 / 27 = 0.444` -- stage spacing is otherwise uniform at 0.25, so
-diestrus = 0.18, proestrus = 0.43, estrus = 0.68, metestrus = 0.93;
-spiny mouse: explicit normalized phase positions from
-[cycle_seed.csv](data/seed/cycle_seed.csv)). **Units are still
-per-species** so absolute magnitudes are not directly comparable --
-these plots are for **phase alignment**, not amplitude comparison.
+axis. Mapping rules:
+
+- **Human:** `(day - 1) / 27`, so menses-onset = 0.00 and day 28 =
+  1.00.
+- **Mouse / rat:** stages are placed at **duration-weighted midpoints**
+  of their canonical wall-clock durations (proestrus 12 h, estrus 12 h,
+  metestrus 21 h, diestrus 57 h; Marcondes et al. 2002, rat 4-day
+  cycle, mouse values within ~10–20 % of these). The whole cycle is
+  rotated so the proestrus midpoint anchors at 0.43, matching the
+  human day-13 LH surge at `12 / 27 = 0.444`. Resulting positions:
+  diestrus = 0.09, proestrus = 0.43, estrus = 0.55, metestrus = 0.71.
+  Proestrus and estrus sit close together because the surge +
+  ovulation window is only ~24 h of a ~4-day cycle; diestrus
+  correspondingly occupies more than half the normalized axis.
+  **Per-species rodent panels in §2.2 / §2.3 still use equal-width
+  stages** (one tick per stage) for readability; the duration
+  weighting is applied only to the cross-species panels here.
+- **Spiny mouse:** explicit normalized phase positions from
+  [cycle_seed.csv](data/seed/cycle_seed.csv) (menses 0.10,
+  proliferative 0.40, secretory 0.75).
+
+**Units are still per-species** so absolute magnitudes are not
+directly comparable -- these plots are for **phase alignment**, not
+amplitude comparison.
 
 ### 3.1 Estradiol
 
@@ -274,16 +289,15 @@ classifier**, not a clinical efficacy comparison.
 - **Units are not silently converted across species** (gonadotropin
   units in particular differ; do not read absolute amplitudes off
   cross-species plots).
-- **Cycle position normalization is uniform-width on stage index for
-  rodents** (each estrous stage = 0.25 of the normalized axis), with
-  the cycle rotated so proestrus anchors at 0.43 to align the rodent
-  LH/FSH surge with the human day-13 surge. This compresses the brief
-  estrus phase and stretches the longer diestrus phase relative to
-  wall-clock time, so the **rotation aligns surges but does not align
-  phase durations**. A duration-weighted normalization (estrus
-  ~12 h, diestrus ~48 h) is a sensible next iteration; until then,
-  the rodent stage positions are anchor points, not biological
-  timepoints.
+- **Cross-species rodent cycle normalization is now duration-weighted**
+  using canonical rat 4-day-cycle hours (Marcondes et al. 2002):
+  proestrus 12 h, estrus 12 h, metestrus 21 h, diestrus 57 h. This
+  replaces the earlier equal-width approximation. Two residual
+  caveats remain: (a) mouse durations are assumed equal to rat
+  within ~10-20 %, not separately curated; (b) per-species rodent
+  panels in §2.2 / §2.3 still draw stages at equal width for tick
+  readability -- the duration weighting is applied only to the
+  cross-species panels in §3.
 - **The contraception matrix is endogenous-hormone-only.** Exogenous
   PK curves (ethinyl estradiol levels, levonorgestrel serum
   concentration vs time) are Phase 6B and deliberately deferred.
@@ -297,13 +311,16 @@ classifier**, not a clinical efficacy comparison.
 
 In rough order of yield-per-effort:
 
-1. **Duration-weighted rodent cycle normalization** — replace the
-   stage-index normalization with stage-duration weights (estrus is
-   ~12 h, diestrus ~48 h) so cross-species panels reflect biological
-   time, not stage count.
+1. **Species-specific rodent stage durations.** Current cross-species
+   normalization uses rat 4-day-cycle hours (Marcondes 2002) for
+   both mouse and rat. Splitting into separate mouse- vs rat-specific
+   duration tables would tighten the per-species placement of estrus
+   and metestrus by a few percent of the normalized axis. Probably
+   not yield-positive unless a downstream claim depends on the
+   distinction.
 2. **Human prolactin series** to complete the cross-species prolactin
    panel.
-3. **Contraception Phase 6B (exogenous PK curves)** — only if
+3. **Contraception Phase 6B (exogenous PK curves)** -- only if
    regulatory or evolutionary questions explicitly need it; the
    endogenous-impact matrix is sufficient for atlas-context framing
    alone.

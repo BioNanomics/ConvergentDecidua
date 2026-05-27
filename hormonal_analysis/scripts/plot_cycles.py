@@ -42,23 +42,55 @@ STAGE_ORDER = ["proestrus", "estrus", "metestrus", "diestrus"]
 # itself.
 STAGE_DISPLAY_ORDER = ["diestrus", "proestrus", "estrus", "metestrus"]
 
-# Stage midpoints on the normalized 0..1 cycle axis, rotated so that
-# proestrus (rodent pre-ovulatory LH surge) aligns with the human
-# day-13 LH surge at position (13 - 1) / (28 - 1) = 0.444. The cycle
-# is circular, so stages are spaced at 0.25 intervals around proestrus:
-#   diestrus (early-follicular equivalent) = 0.43 - 0.25 = 0.18
-#   proestrus (pre-ovulatory)              = 0.43
-#   estrus    (ovulation / early luteal)   = 0.68
-#   metestrus (perimenstrual equivalent)   = 0.93
-# This is still an equal-width approximation. Duration-weighted
-# normalization (estrus ~12 h, diestrus ~48 h) is a separate, deeper
-# fix tracked in results.md §6.
-STAGE_NORMALIZED = {
-    "diestrus": 0.18,
-    "proestrus": 0.43,
-    "estrus": 0.68,
-    "metestrus": 0.93,
+# Canonical rodent estrous-cycle stage durations, in hours. Values
+# are the Marcondes/Bianchi/Tanno 2002 rat 4-day cycle (Braz J Biol
+# 62(4A):609-614, Table I); mouse durations are similar within
+# ~10-20 % so we treat these as a common rodent default rather than
+# curating species-specific durations (which would require carving
+# the seed into separate mouse_estrous_canonical_durations and
+# rat_estrous_canonical_durations). Total = 102 h ~= 4.25 d.
+STAGE_DURATIONS_H = {
+    "proestrus": 12,
+    "estrus": 12,
+    "metestrus": 21,
+    "diestrus": 57,
 }
+
+# Biological cycle order (diestrus -> proestrus -> estrus -> metestrus
+# -> diestrus). We build duration-weighted stage midpoints on the
+# 0..1 cycle, then rotate the whole cycle so that the proestrus
+# midpoint sits at 0.43 -- matching the human day-13 LH surge at
+# (13 - 1) / (28 - 1) = 0.444. The resulting positions are:
+#   diestrus  ~ 0.09  (long: 0.559 of cycle wall-clock)
+#   proestrus ~ 0.43  (short: 0.118)
+#   estrus    ~ 0.55  (short: 0.118)
+#   metestrus ~ 0.71  (medium: 0.206)
+# Proestrus and estrus are visually tight in cross-species panels
+# because the rodent surge + ovulation window is only ~24 h of a
+# ~4-day cycle; diestrus correspondingly stretches over more than
+# half the normalized axis. This is intentional -- the goal of the
+# duration weighting is to make cross-species panels reflect
+# biological wall-clock time, not stage count. The PER-SPECIES
+# rodent panels in section 2.2 / 2.3 still use equal-width stages
+# (one tick per stage); the duration-weighted positions are applied
+# only to the cross-species panels in section 3.
+_CYCLE_ORDER = ["diestrus", "proestrus", "estrus", "metestrus"]
+_TOTAL_H = sum(STAGE_DURATIONS_H.values())
+_PROESTRUS_ANCHOR = 0.43
+
+
+def _compute_stage_normalized() -> dict[str, float]:
+    midpoints: dict[str, float] = {}
+    cursor = 0.0
+    for stage in _CYCLE_ORDER:
+        width = STAGE_DURATIONS_H[stage] / _TOTAL_H
+        midpoints[stage] = cursor + width / 2
+        cursor += width
+    shift = _PROESTRUS_ANCHOR - midpoints["proestrus"]
+    return {s: round((m + shift) % 1.0, 4) for s, m in midpoints.items()}
+
+
+STAGE_NORMALIZED = _compute_stage_normalized()
 
 # Human cycle length used to normalize day -> 0..1.
 HUMAN_CYCLE_LENGTH_DAYS = 28
