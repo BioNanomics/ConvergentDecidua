@@ -90,13 +90,19 @@ cycle_sources:
     notes: >
       Progesterone (ng/mL, ELISA, cardiac puncture, single-sample) per
       Bellofiore 2018 Table 2: early follicular 30-64; late luteal
-      70-199; ~3.1-fold luteal:follicular increase. Prolactin (IU/L,
-      DXI immunoassay) per Bellofiore 2018 Table 3: early follicular
-      3.3 +/- 4.1; late follicular 10.0 +/- 7.9; early luteal 5.0 +/-
-      5.0; late luteal 11.7 +/- 2.6. Cycle length 6-10 days (mean 8.7
-      +/- 0.4). Seeded as normalized cycle position because the spiny
-      mouse menstrual cycle does not share the proestrus/estrus/
-      metestrus/diestrus axis used for mouse and rat.
+      70-199; ~3.1-fold luteal:follicular increase. Table 2 reports
+      P4 in TWO phase bins only (early follicular and late luteal),
+      verified by direct inspection of the JME table on 2026-05-26;
+      this is the source ceiling, not a curation gap. The companion
+      Bellofiore 2021 Hum Reprod paper measures only estradiol and
+      testosterone, not P4, so it does not densify this curve.
+      Prolactin (IU/L, DXI immunoassay) per Bellofiore 2018 Table 3:
+      early follicular 3.3 +/- 4.1; late follicular 10.0 +/- 7.9;
+      early luteal 5.0 +/- 5.0; late luteal 11.7 +/- 2.6. Cycle
+      length 6-10 days (mean 8.7 +/- 0.4). Seeded as normalized cycle
+      position because the spiny mouse menstrual cycle does not share
+      the proestrus/estrus/metestrus/diestrus axis used for mouse and
+      rat.
 
   - id: spiny_mouse_bellofiore_humrep_2021
     species: spiny_mouse

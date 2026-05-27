@@ -306,6 +306,15 @@ classifier**, not a clinical efficacy comparison.
   from only three assays (P4, prolactin, E2) with assay-family and
   unit caveats noted in §2.4 and §3.4; LH and FSH are unseedable
   for this species at present (see §2.4).
+- **Spiny mouse P4 is at the source ceiling, not a curation gap.**
+  Bellofiore 2018 (JME) Table 2 was inspected directly on
+  2026-05-26 and confirmed to report P4 in only TWO phase bins
+  (early follicular, late luteal), in contrast to the same paper's
+  Table 3 prolactin which is reported in four bins. The companion
+  Bellofiore 2021 (Hum Reprod) aging paper measures only estradiol
+  and testosterone, not P4. The two-point spiny-mouse P4 trace
+  therefore reflects what the published literature provides, not
+  an incomplete seed.
 
 ## 6. Suggested next iterations (none committed)
 
