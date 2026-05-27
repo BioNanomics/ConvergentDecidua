@@ -31,7 +31,7 @@ decidualization" framing. Columns:
 | rhesus macaque | close Old World monkey | yes | yes | T2T complete | good, cycle resolved | manual extraction | reference only |
 | common marmoset | close New World monkey | unconfirmed, likely no | no | chromosome scale | moderate, ovarian cycle | manual extraction | exploratory |
 | gray mouse lemur | strepsirrhine | likely no | no | chromosome scale | sparse | reference only | exploratory |
-| spiny mouse (*Acomys*) | rodent (Acomys) | yes | yes | chromosome scale | sparse, stage resolved | manual extraction | exploratory |
+| spiny mouse (*Acomys*) | rodent (Acomys) | yes | yes | chromosome scale | sparse, phase resolved | manual extraction | plotted |
 | mouse | rodent outgroup | no | no | T2T complete | good, stage resolved | manual extraction | plotted |
 | rat | rodent outgroup | no | no | chromosome scale | good, stage resolved | manual extraction | plotted |
 
@@ -50,9 +50,14 @@ decidualization" framing. Columns:
 - Mouse lemur is the cleaner candidate for a phenotype-clean primate
   trait-negative control on the spontaneous-decidualization axis, but
   endocrine data is too sparse for first-pass plotting.
-- Spiny mouse is included as a positive control on the
-  menstruation/spontaneous-decidualization side, but is exploratory
-  because hormone tables remain thin.
+- Spiny mouse is now **plotted** as a positive control on the
+  menstruation/spontaneous-decidualization axis using the
+  Bellofiore 2018 review tabulation of Bellofiore 2017 progesterone
+  (early follicular 30-64 ng/mL; late luteal 70-199 ng/mL; ~3.1-fold
+  rise) and prolactin (four phase means in IU/L by DXI immunoassay).
+  E2, LH, and FSH absolute values for the spiny mouse are not
+  available in the reviewed tables and remain a gap; only P4 and
+  prolactin are seeded.
 - Bat is intentionally absent from this matrix because the project
   scope downgraded it to sequence-first; revisit if a downloadable
   bat hormone-cycle table appears.

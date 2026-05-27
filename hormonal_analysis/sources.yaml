@@ -74,15 +74,29 @@ cycle_sources:
 
   - id: spiny_mouse_bellofiore
     species: spiny_mouse
-    hormones: [progesterone]
+    hormones: [progesterone, prolactin]
     source_type: primary_literature
-    access_class: reference_only
-    citation: "Bellofiore N, et al. First evidence of a menstruating rodent: the spiny mouse (Acomys cahirinus). Am J Obstet Gynecol 2017;216(1):40.e1-40.e11."
-    url: https://pubmed.ncbi.nlm.nih.gov/27381173/
+    access_class: manual_table_extraction
+    citation: >
+      Bellofiore N et al. First evidence of a menstruating rodent: the
+      spiny mouse (Acomys cahirinus). Am J Obstet Gynecol 2017;216(1):
+      40.e1-40.e11 (DOI 10.1016/j.ajog.2016.07.041). Tabulated phase
+      ranges in Bellofiore N et al. A missing piece: the spiny mouse
+      and the puzzle of menstruating species. J Mol Endocrinol
+      2018;61(1):R25-R41 (DOI 10.1530/JME-17-0278), Tables 2 (P4) and
+      3 (PRL).
+    url: https://doi.org/10.1530/JME-17-0278
     accessed: 2026-05-26
     notes: >
-      Stage-resolved progesterone data exists in the literature
-      but is too sparse for a first-pass plotted curve.
+      Progesterone (ng/mL, ELISA, cardiac puncture, single-sample) per
+      Bellofiore 2018 Table 2: early follicular 30-64; late luteal
+      70-199; ~3.1-fold luteal:follicular increase. Prolactin (IU/L,
+      DXI immunoassay) per Bellofiore 2018 Table 3: early follicular
+      3.3 +/- 4.1; late follicular 10.0 +/- 7.9; early luteal 5.0 +/-
+      5.0; late luteal 11.7 +/- 2.6. Cycle length 6-10 days (mean 8.7
+      +/- 0.4). Seeded as normalized cycle position because the spiny
+      mouse menstrual cycle does not share the proestrus/estrus/
+      metestrus/diestrus axis used for mouse and rat.
 
   - id: mouse_lemur_reference
     species: gray_mouse_lemur

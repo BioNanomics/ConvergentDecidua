@@ -75,6 +75,10 @@ def _plot_species(species: str, df: pd.DataFrame) -> Path:
         sub["x"] = sub["coordinate"].map(lambda s: STAGE_ORDER.index(s))
         x_label = "Estrous stage"
         x_ticks = (list(range(len(STAGE_ORDER))), STAGE_ORDER)
+    elif coord_type == "normalized":
+        sub["x"] = sub["coordinate"].astype(float)
+        x_label = "Normalized cycle position (0 = start, 1 = end)"
+        x_ticks = None
     else:
         raise ValueError(f"unsupported coordinate_type for {species}: {coord_type}")
 

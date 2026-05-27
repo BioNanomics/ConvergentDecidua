@@ -67,3 +67,9 @@ rat,rat_estrous_canonical,prolactin,stage,proestrus,80,ng/mL,,,,surge with LH
 rat,rat_estrous_canonical,prolactin,stage,estrus,20,ng/mL,,,,decline
 rat,rat_estrous_canonical,prolactin,stage,metestrus,15,ng/mL,,,,low
 rat,rat_estrous_canonical,prolactin,stage,diestrus,18,ng/mL,,,,low
+spiny_mouse,spiny_mouse_bellofiore,progesterone,normalized,0.15,47,ng/mL,30,64,,early follicular (proliferative) midpoint; Bellofiore 2018 Table 2
+spiny_mouse,spiny_mouse_bellofiore,progesterone,normalized,0.90,135,ng/mL,70,199,,late luteal (secretory) midpoint; ~3.1x increase over early follicular
+spiny_mouse,spiny_mouse_bellofiore,prolactin,normalized,0.15,3.3,IU/L,,,,early follicular mean (SD 4.1); Bellofiore 2018 Table 3
+spiny_mouse,spiny_mouse_bellofiore,prolactin,normalized,0.40,10.0,IU/L,,,,late follicular mean (SD 7.9)
+spiny_mouse,spiny_mouse_bellofiore,prolactin,normalized,0.65,5.0,IU/L,,,,early luteal mean (SD 5.0)
+spiny_mouse,spiny_mouse_bellofiore,prolactin,normalized,0.90,11.7,IU/L,,,,late luteal mean (SD 2.6); p<0.05 vs early follicular
