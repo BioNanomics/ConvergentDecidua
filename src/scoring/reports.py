@@ -142,3 +142,99 @@ def _write_markdown_report(
         for col in score_columns:
             fh.write(f"- `violin_{col}.png` — Distribution by cell type\n")
     logger.info("Markdown report → %s", output_path)
+
+
+def generate_bulk_score_report(
+    scored: dict[str, ad.AnnData],
+    monotonicity_tables: dict[str, pd.DataFrame],
+    output_dir: Path,
+) -> Path:
+    """Write a combined bulk-scoring report: per-dataset monotonicity tables
+    and a per-module ``decidual_score`` vs. time line plot for each dataset.
+
+    Parameters
+    ----------
+    scored
+        Mapping ``accession → scored AnnData`` (with numeric ``time`` in obs
+        and one column per scoring module).
+    monotonicity_tables
+        Mapping ``accession → DataFrame`` returned by
+        ``src.scoring.bulk.monotonicity``.
+    output_dir
+        Directory to write the report + plots into.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    md_path = output_dir / "bulk_scoring_report.md"
+
+    _plot_bulk_score_vs_time(scored, output_dir)
+
+    with open(md_path, "w") as fh:
+        fh.write("# Bulk RNA-seq scoring — monotonicity\n\n")
+        fh.write(
+            "For each bulk dataset, Spearman rank correlation between the\n"
+            "experimental ``time`` axis (parsed from sample labels) and\n"
+            "each scoring module. ``monotonic`` = |rho| ≥ 0.7 and pval <\n"
+            "0.05 (Q3.1 floor; small-n bulk has limited statistical power\n"
+            "so rho carries the signal). A monotone ``decidual_score`` is\n"
+            "the Q3.1 acceptance criterion.\n\n"
+        )
+        for acc, table in monotonicity_tables.items():
+            adata = scored[acc]
+            fh.write(f"## {acc}\n\n")
+            fh.write(
+                f"- samples: **{adata.n_obs}**, "
+                f"genes: **{adata.n_vars}**, "
+                f"species: **{adata.obs['species'].iloc[0]}**\n"
+            )
+            fh.write(
+                f"- time axis: "
+                f"`{dict(zip(adata.obs_names, adata.obs['time'].astype(float), strict=False))}`\n\n"
+            )
+            fh.write(table.reset_index().to_markdown(index=False))
+            fh.write(f"\n\n![{acc} decidual_score vs time](decidual_score_vs_time_{acc}.png)\n\n")
+    logger.info("Bulk scoring report → %s", md_path)
+    return md_path
+
+
+def _plot_bulk_score_vs_time(scored: dict[str, ad.AnnData], output_dir: Path) -> None:
+    """Plot every module vs. time for each bulk dataset.
+
+    Highlights ``decidual_score`` (the Q3.1 acceptance signal) in colour;
+    other modules drawn in light grey for context.
+    """
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        logger.warning("matplotlib not available — skipping bulk score plots")
+        return
+
+    for acc, adata in scored.items():
+        if "time" not in adata.obs.columns:
+            continue
+        time = adata.obs["time"].astype(float)
+        order = time.argsort().values
+        time = time.iloc[order]
+        score_cols = [c for c in adata.obs.columns if c.endswith("_score")]
+        if not score_cols:
+            continue
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        for col in score_cols:
+            y = adata.obs[col].astype(float).iloc[order]
+            if col == "decidual_score":
+                ax.plot(time, y, marker="o", linewidth=2, label=col, color="C3", zorder=5)
+            else:
+                ax.plot(time, y, marker=".", linewidth=1, alpha=0.5, color="grey", label=col)
+        ax.set_xlabel("time (parsed from sample labels)")
+        ax.set_ylabel("module score (z-scored mean)")
+        ax.set_title(f"{acc} — module scores vs time")
+        ax.axhline(0, color="black", linewidth=0.5, linestyle=":")
+        ax.legend(loc="best", fontsize="x-small", ncol=2)
+        fig.tight_layout()
+        out = output_dir / f"decidual_score_vs_time_{acc}.png"
+        fig.savefig(out, dpi=150)
+        plt.close(fig)
+        logger.info("Plot → %s", out)

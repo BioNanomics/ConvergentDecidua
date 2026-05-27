@@ -415,6 +415,72 @@ def score_decidua() -> None:
     console.print(f"[green]✓ Report: {report_dir}[/green]")
 
 
+@cli.command("score-bulk")
+@click.option(
+    "--accession",
+    help="Single bulk accession to score (default: all bulk datasets in configs/datasets.yaml).",
+)
+def score_bulk(accession: str | None) -> None:
+    """Score bulk RNA-seq datasets and report monotonicity vs. time (Q3.1)."""
+    from pathlib import Path
+
+    import anndata as ad
+
+    from src.scoring.bulk import monotonicity
+    from src.scoring.bulk import score_bulk as _score_bulk
+    from src.scoring.gene_sets import load_score_gene_sets
+    from src.scoring.reports import generate_bulk_score_report
+    from wombat.config import load_config
+
+    project_root = Path(__file__).resolve().parent.parent
+    backbone_path = project_root / "results" / "orthologs" / "backbone.parquet"
+    report_dir = project_root / "results" / "reports" / "scoring"
+    scored_dir = project_root / "results" / "scored"
+    scored_dir.mkdir(parents=True, exist_ok=True)
+
+    datasets = load_config("datasets")
+    bulk = [d for d in datasets if "bulk" in d["assay"].lower()]
+    if accession:
+        bulk = [d for d in bulk if d["accession"] == accession]
+    if not bulk:
+        console.print("[red]No bulk datasets matched.[/red]")
+        raise SystemExit(1)
+
+    gene_sets = load_score_gene_sets()
+    bp = backbone_path if backbone_path.exists() else None
+
+    scored: dict[str, ad.AnnData] = {}
+    tables = {}
+    for ds in bulk:
+        acc = ds["accession"]
+        qc_path = project_root / "results" / "qc" / f"{acc}.h5ad"
+        if not qc_path.exists():
+            console.print(f"[yellow]Skip {acc} — no QC h5ad at {qc_path}[/yellow]")
+            continue
+        console.print(f"[blue]Scoring {acc} ({ds['species']})...[/blue]")
+        adata = ad.read_h5ad(qc_path)
+        adata = _score_bulk(adata, species=ds["species"], backbone_path=bp, gene_sets=gene_sets)
+        out = scored_dir / f"{acc}_bulk_scored.h5ad"
+        adata.write_h5ad(out)
+        console.print(f"[green]  ✓ {out}[/green]")
+
+        table = monotonicity(adata, list(gene_sets.keys()))
+        tables[acc] = table
+        scored[acc] = adata
+        dec = table.loc["decidual_score"] if "decidual_score" in table.index else None
+        if dec is not None:
+            console.print(
+                f"[dim]    decidual_score: rho={dec['rho']:+.3f}, "
+                f"pval={dec['pval']:.3g}, monotonic={dec['monotonic']}[/dim]"
+            )
+
+    if scored:
+        generate_bulk_score_report(scored, tables, report_dir)
+        console.print(
+            f"[green]✓ Bulk scoring report → {report_dir}/bulk_scoring_report.md[/green]"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Reports command
 # ---------------------------------------------------------------------------
