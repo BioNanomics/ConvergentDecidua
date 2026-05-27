@@ -664,14 +664,21 @@ experiment, neither of which is in Q4 scope.
 **Replacement plan — use the actual published comparative deciduagenesis
 datasets:**
 
-- [ ] Ingest **GSE274701** (Mika / Wagner group, 2024) —
+- [x] Ingest **GSE274701** (Mika / Wagner group, 2024) —
   multi-species single-cell atlas of midgestation fetal-maternal
-  interface (opossum, tenrec, guinea pig, mouse; integrated with
-  prior human + macaque). H5AD download available, 23 samples.
-  Provides the phylogenetic-expansion trait contrast in one
-  deposition: trait-positive {human, macaque, candidate
-  tenrec-as-afrotherian-sister-to-elephant-shrew} vs trait-negative
-  {opossum, guinea pig, mouse}.
+  interface (opossum, tenrec, guinea pig, mouse; **deposit does NOT
+  contain macaque despite paper text**). Implemented
+  `geo_per_species_h5ad` ingest path (commit 85de7fa); deposit
+  ships one h5ad per species, copied into canonical
+  `results/processed/GSE274701__{species}.h5ad` naming + manifest.
+  Per-species cell counts: guinea_pig 18,131 / mouse 11,452 /
+  opossum 6,761 / tenrec 29,652 (~66k cells, 4 species). The
+  `GSE274701_RAW.tar` (836 MB) also unpacked a bonus per-sample
+  MTX set plus a Te132 kallisto MPA/DIFF/T25 stim-time-course; not
+  consumed by the current manifest but available for later
+  stim-response work. The macaque trait-positive datum the
+  original Q4 plan called for must come from elsewhere
+  (likely Lyu 2022 reanalysis or a new ask).
 - [ ] Ingest **GSE155170** (Marinic / Wagner / Kin et al., 2021) —
   "Evolutionary transcriptomics implicates HAND2 in the origins of
   implantation and regulation of gestation length." Bulk RNA from
@@ -685,11 +692,14 @@ datasets:**
   positive datum the original Q4 framing called for and a second
   catarrhine trait-positive (baboon) alongside three trait-negative
   rodents.
-- [ ] Ingest **GSE109309** (Erkenbrack / Wagner 2018, "The mammalian
+- [x] Ingest **GSE109309** (Erkenbrack / Wagner 2018, "The mammalian
   decidual cell evolved from a cellular stress response") — opossum
-  endometrial stromal cells, bulk RNA, 15 samples. Direct conceptual
-  ancestor of the Q4.1 priming-distance finding; provides the
-  trait-negative marsupial outgroup for stress-response framing.
+  endometrial stromal cells, bulk RNA, 15 samples × 23,899 ENSMODG
+  genes under the standard UNDIFF/DIFF/MPA/PGE2/PGE2+MPA in vitro
+  stim panel (commit 64171f8). Required a small fix to
+  `src/ingest/anndata_writer.py::_load_csv_counts` to drop
+  non-numeric annotation columns (e.g. the leading `gene_name`
+  column shipped alongside the ensembl_id index).
 - [x] Extend `configs/species.yaml` to the new species (opossum,
   tenrec, guinea pig, macaque, baboon, hamster, 13-lined ground
   squirrel, armadillo, **Myotis lucifugus**). 11 entries total;
@@ -747,9 +757,14 @@ comparative-regulatory datasets are ChIP-seq and bulk-RNA, not ATAC:
   transformed the uterine regulatory landscape") — human ChIP-seq /
   TE-derived regulatory landscape; 13 samples; directly probes the
   MER20 / MER41 cis-rewiring hypothesis.
-- [ ] Ingest **GSE30708** (Wagner lab, "Transposon-mediated gene
-  regulatory network rewiring") — human + armadillo + opossum,
-  4 samples; cross-species GRN-rewiring backbone.
+- [x] Ingest **GSE30708** (Wagner lab, "Transposon-mediated gene
+  regulatory network rewiring") — per-species TSV deposit
+  (commit 64171f8) ingested via new `geo_per_species_table` ingest
+  format: human 4 samples (DIFF-Abs/UNDIFF-Abs replicates 1-2),
+  armadillo n=1 (single count column), opossum n=1 (RPKM + Mapped
+  Reads cols). Thin per-species replication limits this dataset to
+  qualitative cross-species DE-pattern overlay rather than per-
+  species statistics.
 - [ ] New `src/cis_regulatory/` module (renamed scope: ChIP-seq +
   TE-overlap, not ATAC):
   - `chip_qc.py` — peak calls, FRiP, blacklist filtering for the
