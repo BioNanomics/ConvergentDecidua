@@ -1,0 +1,206 @@
+# Source manifest for hormonal_analysis.
+#
+# Every entry must include: id, species, hormones, source_type,
+# access_class (automated_download | manual_table_extraction |
+# reference_only), citation, url, accessed (YYYY-MM-DD), notes.
+#
+# This file is the single source of truth for what the workspace
+# claims to know about. Plotting scripts only consume rows whose
+# access_class is automated_download or manual_table_extraction AND
+# whose seed data has been added under data/seed/.
+
+cycle_sources:
+  - id: human_reed_carr
+    species: human
+    hormones: [estradiol, progesterone, lh, fsh]
+    source_type: open_access_textbook_chapter
+    access_class: manual_table_extraction
+    citation: "Reed BG, Carr BR. The Normal Menstrual Cycle and the Control of Ovulation. Endotext / NCBI Bookshelf, NBK279054."
+    url: https://www.ncbi.nlm.nih.gov/books/NBK279054/
+    accessed: 2026-05-26
+    notes: >
+      Provides canonical daily-resolution serum hormone curves
+      across the menstrual cycle. Used as the human seed.
+
+  - id: mouse_estrous_canonical
+    species: mouse
+    hormones: [estradiol, progesterone, lh, fsh]
+    source_type: review_summary
+    access_class: manual_table_extraction
+    citation: "Composite seed from canonical mouse estrous-cycle physiology references (e.g., Wall et al. 2023 and classical Nelson/Schwartz mouse endocrinology summaries)."
+    url: https://www.ncbi.nlm.nih.gov/pubmed/?term=mouse+estrous+cycle+hormone
+    accessed: 2026-05-26
+    notes: >
+      Mouse cycle hormones are typically reported at stage
+      resolution (proestrus / estrus / metestrus / diestrus)
+      rather than per day. Seed table preserves stage axis.
+
+  - id: rat_estrous_canonical
+    species: rat
+    hormones: [estradiol, progesterone, lh, fsh, prolactin]
+    source_type: review_summary
+    access_class: manual_table_extraction
+    citation: "Composite seed from classical rat 4-day estrous-cycle endocrinology references (Smith, Freeman & Neill; Butcher, Collins & Fugo)."
+    url: https://www.ncbi.nlm.nih.gov/pubmed/?term=rat+estrous+cycle+hormone+profile
+    accessed: 2026-05-26
+    notes: >
+      Rat has the richest classical endocrine literature among the
+      first-pass species. Seed table is stage-resolved.
+
+  - id: marmoset_einspanier
+    species: common_marmoset
+    hormones: [progesterone, estradiol]
+    source_type: primary_literature
+    access_class: reference_only
+    citation: "Einspanier A, et al. Marmoset uterine relaxin / cycle work, e.g. Mol Hum Reprod 2001;7(10):963-70 and Ann N Y Acad Sci 2009;1160:140-146."
+    url: https://pubmed.ncbi.nlm.nih.gov/11574665/
+    accessed: 2026-05-26
+    notes: >
+      Cited for context; phenotype status for spontaneous
+      decidualization not settled. Not used in first-pass plotting.
+
+  - id: rhesus_macaque_review
+    species: rhesus_macaque
+    hormones: [estradiol, progesterone, lh, fsh]
+    source_type: review_summary
+    access_class: reference_only
+    citation: "Primate reproductive endocrinology reviews (Stouffer & Hennebold; NHP center references)."
+    url: https://pubmed.ncbi.nlm.nih.gov/?term=rhesus+macaque+menstrual+cycle+hormone
+    accessed: 2026-05-26
+    notes: >
+      Strong menstrual-cycle hormone data but wrong side of the
+      spontaneous-decidualization axis for the trait-negative
+      control role. Tracked for menstruation comparisons only.
+
+  - id: spiny_mouse_bellofiore
+    species: spiny_mouse
+    hormones: [progesterone, prolactin]
+    source_type: primary_literature
+    access_class: manual_table_extraction
+    citation: >
+      Bellofiore N et al. First evidence of a menstruating rodent: the
+      spiny mouse (Acomys cahirinus). Am J Obstet Gynecol 2017;216(1):
+      40.e1-40.e11 (DOI 10.1016/j.ajog.2016.07.041). Tabulated phase
+      ranges in Bellofiore N et al. A missing piece: the spiny mouse
+      and the puzzle of menstruating species. J Mol Endocrinol
+      2018;61(1):R25-R41 (DOI 10.1530/JME-17-0278), Tables 2 (P4) and
+      3 (PRL).
+    url: https://doi.org/10.1530/JME-17-0278
+    accessed: 2026-05-26
+    notes: >
+      Progesterone (ng/mL, ELISA, cardiac puncture, single-sample) per
+      Bellofiore 2018 Table 2: early follicular 30-64; late luteal
+      70-199; ~3.1-fold luteal:follicular increase. Table 2 reports
+      P4 in TWO phase bins only (early follicular and late luteal),
+      verified by direct inspection of the JME table on 2026-05-26;
+      this is the source ceiling, not a curation gap. The companion
+      Bellofiore 2021 Hum Reprod paper measures only estradiol and
+      testosterone, not P4, so it does not densify this curve.
+      Prolactin (IU/L, DXI immunoassay) per Bellofiore 2018 Table 3:
+      early follicular 3.3 +/- 4.1; late follicular 10.0 +/- 7.9;
+      early luteal 5.0 +/- 5.0; late luteal 11.7 +/- 2.6. Cycle
+      length 6-10 days (mean 8.7 +/- 0.4). Seeded as normalized cycle
+      position because the spiny mouse menstrual cycle does not share
+      the proestrus/estrus/metestrus/diestrus axis used for mouse and
+      rat.
+
+  - id: spiny_mouse_bellofiore_humrep_2021
+    species: spiny_mouse
+    hormones: [estradiol]
+    source_type: primary_literature
+    access_class: manual_table_extraction
+    citation: >
+      Bellofiore N, George E, Vollenhoven B, Temple-Smith P, Evans J.
+      Reproductive aging and menopause-like transition in the
+      menstruating spiny mouse (Acomys cahirinus). Human Reproduction
+      2021;36(12):3083-3094 (DOI 10.1093/humrep/deab215). Figure 1e
+      and Supplementary Table SI (assay validation).
+    url: https://doi.org/10.1093/humrep/deab215
+    accessed: 2026-05-26
+    notes: >
+      Estradiol (pg/mL, Calbiotech Mouse/Rat ELISA ES180S-100,
+      cardiac puncture, single-sample) measured in n=9 healthy
+      6-month-old females. Spike-and-recovery and linearity-of-
+      dilution validation for spiny mouse serum is in Suppl Table SI.
+      Paper states the cycle range is ~50-140 pg/mL with the peak
+      during the proliferative phase, nadir during menses, and a
+      secondary elevation during the secretory phase. Three phase
+      means were digitized by eye from Fig 1e (6-month column, dots
+      coloured by cycle phase): menses ~72 (red dots ~45 + ~100,
+      n=2); proliferative ~116 (orange ~100 + ~110 + ~137, n=3);
+      secretory ~107 (lavender ~85 + ~108 + ~110 + ~125, n=4).
+      Individual-point reads are accurate to roughly +/- 5 pg/mL.
+
+  - id: spiny_mouse_gonadotropin_ceiling
+    species: spiny_mouse
+    hormones: [lh, fsh]
+    source_type: methodological_note
+    access_class: reference_only
+    citation: >
+      McKenna J et al. A human-based assisted reproduction protocol
+      for the menstruating spiny mouse, Acomys cahirinus. PLoS ONE
+      2020;15(12):e0244411 (DOI 10.1371/journal.pone.0244411).
+      McKenna J et al. Postpartum ovulation and early pregnancy in
+      the menstruating spiny mouse, Acomys cahirinus. Sci Rep
+      2021;11:4577 (DOI 10.1038/s41598-021-84361-z).
+    url: https://doi.org/10.1371/journal.pone.0244411
+    accessed: 2026-05-26
+    notes: >
+      Absolute serum LH and FSH cannot be measured in spiny mouse at
+      present. Two independent statements from the Bellofiore /
+      McKenna group: (a) no specific spiny mouse LH or FSH
+      immunoassay has been validated and cross-reactive antibodies
+      from other species do not work reliably; (b) skin autotomy
+      (the spiny mouse's defining shed-skin defense) precludes the
+      repeated ear or tail vein blood draws needed for cycle-resolved
+      gonadotropin tracking. This is a species-level technical
+      ceiling, not a literature-fetch gap. No values are seeded.
+
+  - id: mouse_lemur_reference
+    species: gray_mouse_lemur
+    hormones: []
+    source_type: review_summary
+    access_class: reference_only
+    citation: "Carter AM, Enders AC, Pijnenborg R. The role of invasive trophoblast in implantation and placentation of primates. Philos Trans R Soc Lond B Biol Sci 2015;370(1663):20140070."
+    url: https://pubmed.ncbi.nlm.nih.gov/25602074/
+    accessed: 2026-05-26
+    notes: >
+      Strepsirrhine implantation reference. Mouse lemur is the
+      cleaner phenotype-negative primate comparator on paper but
+      lacks usable endocrine data.
+
+contraception_sources:
+  - id: fda_drug_labels
+    methods: [combined_oral_contraceptive, levonorgestrel_iud, etonogestrel_implant, dmpa, vaginal_ring, transdermal_patch, progestin_only_pill]
+    source_type: regulatory_label
+    access_class: manual_table_extraction
+    citation: "FDA Drugs@FDA prescribing information for approved hormonal contraceptives."
+    url: https://www.accessdata.fda.gov/scripts/cder/daf/
+    accessed: 2026-05-26
+    notes: >
+      Pharmacokinetic and endogenous-suppression summaries appear
+      in the Clinical Pharmacology section. Used as canonical seed
+      for the Phase 6A endogenous-impact table.
+
+  - id: drugbank_pk
+    methods: [combined_oral_contraceptive, levonorgestrel_iud, etonogestrel_implant, dmpa, vaginal_ring, transdermal_patch]
+    source_type: pharmacology_database
+    access_class: reference_only
+    citation: "DrugBank entries for ethinylestradiol, levonorgestrel, etonogestrel, medroxyprogesterone acetate, norethindrone, norelgestromin."
+    url: https://go.drugbank.com/
+    accessed: 2026-05-26
+    notes: >
+      Structured PK summaries (Cmax, Tmax, t1/2, AUC) for the
+      Phase 6B PK pass. Access requires DrugBank academic license;
+      kept reference-only until that step is greenlit.
+
+  - id: who_mec
+    methods: [combined_oral_contraceptive, levonorgestrel_iud, etonogestrel_implant, dmpa, vaginal_ring, transdermal_patch, progestin_only_pill]
+    source_type: clinical_guideline
+    access_class: reference_only
+    citation: "WHO Medical Eligibility Criteria for Contraceptive Use, 5th ed."
+    url: https://www.who.int/publications/i/item/9789241549158
+    accessed: 2026-05-26
+    notes: >
+      Context for which methods to prioritize; not a hormone-data
+      source.

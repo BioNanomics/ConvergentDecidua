@@ -20,7 +20,7 @@ Core public anchors include human cycle scRNA/scATAC datasets like GSE127918 and
 
 ## Mission
 
-Build a reproducible comparative decidualization atlas to investigate the evolutionary origins of spontaneous decidualization, identify conserved gene networks underlying an emergent biological oscillator that helps control cycle length and decidualization, and detect convergent regulatory changes across humans, bats, spiny mouse, and ordinary laboratory mouse as an outgroup.
+Build a reproducible comparative decidualization atlas to investigate how decidual timing shifted from embryo-induced activation to more autonomous cyclic initiation, identify conserved stromal programs associated with that shift, and prioritize candidate lineage-specific regulatory sequence changes across trait-positive species against closely related trait-negative controls.
 
 The project should produce:
 
@@ -30,7 +30,7 @@ The project should produce:
 4. decidualization state labels,
 5. regulatory network models,
 6. sequence-level candidate regulatory elements,
-7. ranked convergence hypotheses,
+7. ranked candidate regulatory change hypotheses,
 8. a database and visualization layer.
 
 ---
@@ -39,7 +39,7 @@ The project should produce:
 
 ## Primary question
 
-What regulatory changes plausibly enabled spontaneous decidualization to evolve independently in menstruating mammals?
+What lineage-specific regulatory changes plausibly shifted decidualization from embryo-induced activation to more autonomous cyclic timing in menstruating mammals?
 
 ## Focal species
 
@@ -52,9 +52,15 @@ Use this initial logic:
 | Spiny mouse | menstruating rodent; sequence-first unless more uterine omics are found |
 | Lab mouse   | non-spontaneous decidualization outgroup                                |
 
+These species are useful because they let the project compare trait-positive and trait-negative lineages rather than rely on a single human-versus-mouse contrast. Spontaneous decidualization, menstruation, and invasive placentation are related but not interchangeable traits, so the analysis must treat them as correlated phenotypes rather than as a single bundled state.
+
 ## Working hypothesis
 
 Spontaneous decidualization is not caused by one “switch gene,” but by regulatory rewiring of stromal-cell hormone, stress-response, immune, and extracellular-matrix programs.
+
+Single-cell transcriptomics can define the stromal cell states and timing-shifted gene programs that differ across species, while comparative genomics can test whether those differences align with derived promoter, enhancer, or other noncoding changes predicted to alter transcription factor binding or chromatin activity.
+
+The near-term deliverable is a ranked, validation-ready set of candidate regulatory sequence changes and associated circuits, not proof of complete causality or a minimal decidualization program.
 
 ---
 
@@ -655,7 +661,7 @@ See [PLAN.md](PLAN.md) for the phased implementation plan, dependency graph, MVR
 |---|---|
 | **MVR 0.1** | Human + mouse, processed matrices, ortholog backbone, stromal cell-state harmonization, decidualization scoring, baseline atlas |
 | **MVR 0.2** | Add bat, spiny mouse genome, sequence windows, GRN baseline |
-| **MVR 0.3** | Add DeciduaAI (scGPT/Geneformer/GENIE3/Enformer), ranked convergence candidates |
+| **MVR 0.3** | Add DeciduaAI (scGPT/Geneformer/GENIE3/Enformer), ranked candidate regulatory sequence changes |
 | **MVR 1.0** | DeciduaForge database, full DecidualAtlas, reproducible workflow, candidate evidence cards, paper-style report |
 
 ---
@@ -665,7 +671,7 @@ See [PLAN.md](PLAN.md) for the phased implementation plan, dependency graph, MVR
 A successful first version should produce this statement:
 
 ```text
-Given public human, mouse, bat, and spiny mouse resources, ConvergentDecidua identifies a ranked set of stromal regulators and candidate regulatory elements whose expression, network position, chromatin support, sequence-model scores, and outgroup contrast are consistent with convergent evolution of spontaneous decidualization.
+Given public human, mouse, bat, and spiny mouse resources, ConvergentDecidua identifies a ranked set of stromal regulators and candidate regulatory elements whose expression, network position, chromatin support, sequence-model scores, and trait-positive versus trait-negative contrasts support validation-ready hypotheses about lineage-specific regulatory sequence changes associated with shifts in decidual timing.
 ```
 
 It does **not** need to prove causality. It should generate high-quality, reproducible hypotheses for follow-up CRISPRi, reporter, organoid, or stromal-cell perturbation experiments.

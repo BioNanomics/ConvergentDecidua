@@ -41,6 +41,24 @@ One reproducible human–mouse decidualization atlas paper in 12 months.
   ChIP-seq, FASTQ→counts, cross-species ATAC, novel GRN inference,
   foundation-model fine-tuning. Future thesis chapters.
 
+## Auxiliary workstream — `hormonal_analysis/` (May 2026)
+
+Root-level research workspace at `hormonal_analysis/` for the
+comparative species matrix, cycle-hormone curves (human + mouse + rat
+core; spiny mouse + primate comparator exploratory), and birth-control
+endogenous-impact plot. Deliberately separate from `src/` and
+`wombat`; reusable helpers may be promoted later but **must not**
+silently expand year-one atlas scope.
+
+- Reproducible core: human, mouse, rat (seeded from open canonical
+  sources tagged in `hormonal_analysis/sources.yaml`).
+- Contraception Phase 6A (endogenous cycle impact) seeded; Phase 6B
+  (drug PK curves) explicitly deferred until DrugBank / FDA-label
+  curation is greenlit.
+- No CI integration. Validation = `ruff check`, `ruff format --check`,
+  and running the three scripts deterministically from a clean
+  checkout.
+
 ---
 
 ## Q1 (months 1–3) — Unblock mouse + reproducibility floor — ✅ DONE
