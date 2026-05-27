@@ -1,20 +1,174 @@
 # Species configuration for ConvergentDecidua
-# MVR 0.1: human + mouse only
+#
+# Tier A (year-one core, MVR 0.1): human + mouse — used by Q1–Q4.1.
+# Tier B (Q4.2 phylogenetic expansion): the 8 additional species
+#   present in GSE155170, GSE274701, GSE109309, and GSE30708. Ortholog
+#   backbones for these are built lazily by ``wombat orthologs build
+#   --target <name>``. Trait-positive = spontaneous decidualization
+#   (menstruation, decidual sloughing without conceptus signal).
+
+# --- Tier A ---
 
 - name: human
   common_name: Human
   taxon_id: 9606
   genome_build: GRCh38
   ensembl_release: 112
+  ensembl_dataset: hsapiens_gene_ensembl
+  ensembl_prefix: hsapiens
   gene_id_prefix: ENSG
   menstruates: true
   spontaneous_decidualization: true
+  tier: A
 
 - name: mouse
   common_name: House mouse
   taxon_id: 10090
   genome_build: GRCm39
   ensembl_release: 112
+  ensembl_dataset: mmusculus_gene_ensembl
+  ensembl_prefix: mmusculus
   gene_id_prefix: ENSMUSG
   menstruates: false
   spontaneous_decidualization: false
+  tier: A
+
+# --- Tier B (Q4.2 phylogenetic expansion) ---
+
+- name: macaque
+  common_name: Rhesus macaque
+  taxon_id: 9544
+  genome_build: Mmul_10
+  ensembl_release: 112
+  ensembl_dataset: mmulatta_gene_ensembl
+  ensembl_prefix: mmulatta
+  gene_id_prefix: ENSMMUG
+  menstruates: true
+  spontaneous_decidualization: true
+  tier: B
+  source_datasets: [GSE274701]
+
+- name: baboon
+  common_name: Olive baboon
+  taxon_id: 9555
+  genome_build: Panubis1.0
+  ensembl_release: 112
+  ensembl_dataset: panubis_gene_ensembl
+  ensembl_prefix: panubis
+  gene_id_prefix: ENSPANG
+  menstruates: true
+  spontaneous_decidualization: true
+  tier: B
+  source_datasets: [GSE155170]
+
+- name: bat_myotis
+  common_name: Little brown bat
+  taxon_id: 59463
+  genome_build: Myoluc2.0
+  ensembl_release: 112
+  ensembl_dataset: mlucifugus_gene_ensembl
+  ensembl_prefix: mlucifugus
+  gene_id_prefix: ENSMLUG
+  menstruates: false  # vespertilionid bats do NOT menstruate (unlike phyllostomids)
+  spontaneous_decidualization: false
+  tier: B
+  source_datasets: [GSE155170]
+  notes: |
+    Originally planned to use Carollia perspicillata (phyllostomid,
+    trait-positive). Inspection of GSE155170 ingested data revealed
+    transcript IDs prefixed ENSMLUT (Myotis lucifugus, vespertilionid)
+    — Marinic/Kin/Wagner aligned the bat samples to Myotis, not
+    Carollia. This means the "bat" arm of GSE155170 is actually
+    **trait-negative**, weakening but not invalidating the convergence
+    contrast. Carollia remains the desired trait-positive bat; a
+    separate ingest with Carollia-aligned data is required before the
+    Q4 trait-convergence figure can include a phyllostomid datum.
+
+- name: hamster
+  common_name: Golden hamster
+  taxon_id: 10036
+  genome_build: MesAur1.0
+  ensembl_release: 112
+  ensembl_dataset: mauratus_gene_ensembl
+  ensembl_prefix: mauratus
+  gene_id_prefix: ENSMAUG
+  menstruates: false
+  spontaneous_decidualization: false
+  tier: B
+  source_datasets: [GSE155170]
+  notes: |
+    GSE155170 hamster samples carry NCBI RefSeq IDs (NM_*) rather than
+    Ensembl IDs — a RefSeq→Ensembl bridge will be required during the
+    Q4.2 ortholog-mapping step (NCBI gene_info + Ensembl xrefs).
+
+- name: ground_squirrel
+  common_name: 13-lined ground squirrel
+  taxon_id: 43179
+  genome_build: SpeTri2.0
+  ensembl_release: 112
+  ensembl_dataset: itridecemlineatus_gene_ensembl
+  ensembl_prefix: itridecemlineatus
+  gene_id_prefix: ENSSTOG
+  menstruates: false
+  spontaneous_decidualization: false
+  tier: B
+  source_datasets: [GSE155170]
+
+- name: guinea_pig
+  common_name: Guinea pig
+  taxon_id: 10141
+  genome_build: Cavpor3.0
+  ensembl_release: 112
+  ensembl_dataset: cporcellus_gene_ensembl
+  ensembl_prefix: cporcellus
+  gene_id_prefix: ENSCPOG
+  menstruates: false
+  spontaneous_decidualization: false
+  tier: B
+  source_datasets: [GSE274701]
+
+- name: tenrec
+  common_name: Malagasy common tenrec
+  taxon_id: 9305
+  genome_build: TENREC
+  ensembl_release: 112
+  ensembl_dataset: tecaudatus_gene_ensembl
+  ensembl_prefix: tecaudatus
+  gene_id_prefix: ENSETEG
+  menstruates: unknown  # afrotherian sister to elephant shrew (which menstruates)
+  spontaneous_decidualization: unknown
+  tier: B
+  source_datasets: [GSE274701]
+  notes: |
+    Trait status uncertain. Tenrec is afrotherian and is the closest
+    deposited sister to elephant shrew (Macroscelides), which IS a
+    documented spontaneous menstruator. Treat as candidate-positive
+    in the Q4.2 trait contrast; do a literature follow-up before
+    assigning the trait label in the final convergence figure.
+
+- name: opossum
+  common_name: Gray short-tailed opossum
+  taxon_id: 13616
+  genome_build: ASM229v1
+  ensembl_release: 112
+  ensembl_dataset: mdomestica_gene_ensembl
+  ensembl_prefix: mdomestica
+  gene_id_prefix: ENSMODG
+  menstruates: false
+  spontaneous_decidualization: false  # marsupial; no deep-invasive deciduum
+  tier: B
+  source_datasets: [GSE274701, GSE109309, GSE30708]
+
+- name: armadillo
+  common_name: Nine-banded armadillo
+  taxon_id: 9361
+  genome_build: Dasnov3.0
+  ensembl_release: 112
+  ensembl_dataset: dnovemcinctus_gene_ensembl
+  ensembl_prefix: dnovemcinctus
+  gene_id_prefix: ENSDNOG
+  menstruates: false
+  spontaneous_decidualization: false  # xenarthran; lacks menstrual sloughing
+  tier: B
+  source_datasets: [GSE30708]
+

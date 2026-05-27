@@ -690,13 +690,36 @@ datasets:**
   endometrial stromal cells, bulk RNA, 15 samples. Direct conceptual
   ancestor of the Q4.1 priming-distance finding; provides the
   trait-negative marsupial outgroup for stress-response framing.
-- [ ] Extend `configs/species.yaml` + ortholog backbone to the new
-  species (opossum, tenrec, guinea pig, macaque, baboon, hamster,
-  13-lined ground squirrel, *Carollia perspicillata*). Tier 1 (1:1
-  orthologs) discipline preserved; tier-2 fallback documented. The
-  bat is the longest evolutionary branch in the set and the most
-  likely to lose 1:1 calls — flag tier-2 fallback rate explicitly in
-  the Q4.2 orthologs report.
+- [x] Extend `configs/species.yaml` to the new species (opossum,
+  tenrec, guinea pig, macaque, baboon, hamster, 13-lined ground
+  squirrel, armadillo, **Myotis lucifugus**). 11 entries total;
+  per-species `tier`, `ensembl_dataset`, `ensembl_prefix`,
+  `source_datasets`, and trait labels recorded.
+- [x] **Ingest GSE155170** (5-species endometrial bulk; corrected from
+  the prior "maternal-fetal interface" label after inspection).
+  Implemented `geo_per_sample_bulk` ingest path in
+  `src/ingest/bulk_multi_species.py` and `.tar` extraction in
+  `src/ingest/geo.py`. Produces one h5ad per species
+  (`results/processed/GSE155170__{species}.h5ad`) plus a manifest
+  h5ad whose `.uns['per_species_h5ads']` indexes them. **Key
+  discovery from real ingest:** the "bat" samples were aligned to
+  *Myotis lucifugus* (vespertilionid, trait-negative — ENSMLUT
+  transcript prefix), not *Carollia perspicillata* (phyllostomid,
+  trait-positive) as the original Marinic/Kin/Wagner paper text
+  suggested. The Q4 convergence figure therefore still **lacks a
+  phyllostomid trait-positive bat**; this is a follow-up data ask.
+  Hamster samples carry NCBI RefSeq IDs (NM_*), so a RefSeq→Ensembl
+  bridge is required at the ortholog-mapping step.
+- [ ] Build human→{macaque, baboon, opossum, guinea_pig, hamster,
+  ground_squirrel, bat_myotis, tenrec, armadillo} ortholog backbones.
+  Current `src/orthologs/ensembl.py` is hardcoded to human→mouse
+  (only `mmusculus_homolog_*` BioMart attributes are wired up);
+  generalize to use the `ensembl_prefix` field added to species.yaml
+  and run the build per Tier B species. Tier 1 (1:1 orthologs)
+  discipline preserved; tier-2 fallback documented. The Myotis bat
+  is the longest branch in the set and the most likely to lose 1:1
+  calls — flag tier-2 fallback rate explicitly in the Q4.2 orthologs
+  report. Hamster needs the RefSeq→Ensembl bridge before mapping.
 - [ ] Re-run the Q3.2 / Q3.3 / Q4.1 baseline-priming pipeline on the
   expanded set. **Key contrast**: `decidual_score` activation
   amplitude (Q3.2) and `priming_distance` (Q4.1) correlated with the

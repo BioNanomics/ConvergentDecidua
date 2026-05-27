@@ -77,15 +77,18 @@ def fetch_geo_dataset(
         if dest.exists():
             logger.info("Already downloaded: %s", dest)
             downloaded.append(dest)
-            continue
+        else:
+            logger.info("Downloading %s → %s", url, dest)
+            _download_file(url, dest, timeout=timeout)
+            downloaded.append(dest)
 
-        logger.info("Downloading %s → %s", url, dest)
-        _download_file(url, dest, timeout=timeout)
-        downloaded.append(dest)
-
-        # Extract tar.gz bundles (common for MTX format)
-        if filename.endswith(".tar.gz") or filename.endswith(".tgz"):
-            _extract_tar(dest, output_dir)
+        # Extract tar bundles whether freshly downloaded or already on disk
+        # (idempotent: tarfile.extractall overwrites). GEO ships some series
+        # as plain ``.tar`` (e.g. GSE155170) — not gzipped — so we handle both.
+        if filename.endswith((".tar.gz", ".tgz")):
+            _extract_tar(dest, output_dir, mode="r:gz")
+        elif filename.endswith(".tar"):
+            _extract_tar(dest, output_dir, mode="r:")
 
     return downloaded
 
@@ -150,10 +153,10 @@ def _download_file(url: str, dest: Path, *, timeout: int) -> None:
             fh.write(chunk)
 
 
-def _extract_tar(tar_path: Path, output_dir: Path) -> None:
-    """Extract a tar.gz archive."""
-    logger.info("Extracting %s", tar_path)
-    with tarfile.open(tar_path, "r:gz") as tf:
+def _extract_tar(tar_path: Path, output_dir: Path, *, mode: str = "r:gz") -> None:
+    """Extract a tar archive (gzip-compressed by default)."""
+    logger.info("Extracting %s (mode=%s)", tar_path, mode)
+    with tarfile.open(tar_path, mode) as tf:
         # Security: prevent path traversal
         for member in tf.getmembers():
             if member.name.startswith("/") or ".." in member.name:

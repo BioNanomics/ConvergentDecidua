@@ -40,6 +40,16 @@ def to_anndata(
     ad.AnnData
         The loaded and annotated AnnData object.
     """
+    ingest_cfg = dataset_meta.get("ingest") or {}
+
+    # Multi-species per-sample bulk (e.g. GSE155170) writes one h5ad
+    # per species and a small manifest at ``output_path`` whose .uns
+    # carries pointers to the per-species files.
+    if ingest_cfg.get("format") == "geo_per_sample_bulk":
+        from src.ingest.bulk_multi_species import write_per_sample_bulk
+
+        return write_per_sample_bulk(raw_dir, dataset_meta, output_path)
+
     adata = _load_from_dir(raw_dir, dataset_meta=dataset_meta)
 
     # Attach dataset metadata to .uns

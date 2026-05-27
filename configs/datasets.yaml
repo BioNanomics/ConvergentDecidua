@@ -174,7 +174,7 @@
 
 - accession: GSE155170
   species: multi  # mouse, ground_squirrel, baboon, hamster, bat (Carollia perspicillata)
-  tissue: maternal_fetal_interface
+  tissue: endometrium
   assay: bulk-RNA-seq
   condition: implantation_evolution
   spontaneous_decidualization: mixed  # trait-positive: baboon, Carollia (phyllostomid bat menstruates); trait-negative: mouse, ground_squirrel, hamster
@@ -183,13 +183,24 @@
   priority: high
   source: GEO
   expected_format: counts
+  ingest:
+    format: geo_per_sample_bulk
+    # Filename pattern: GSM<id>_<Species>_Endometrium_Individual_<n>[_Replicate_<m>].txt.gz
+    # Each file is a 2-col TSV: gene_id<TAB>count. One h5ad per species
+    # is written to results/processed/GSE155170__<species_key>.h5ad.
+    filename_species_map:
+      Baboon: baboon
+      Hamster: hamster
+      Bat: bat_myotis
+      Squirrel: ground_squirrel
+      Mouse: mouse
   description: |
     Marinic/Wagner (Kin et al.) "Evolutionary transcriptomics implicates
     HAND2 in the origins of implantation and regulation of gestation
-    length." 16 samples across 5 species. Provides the **bat
-    (Carollia perspicillata)** trait-positive datum and a second
-    catarrhine trait-positive (Papio anubis) for the Q4.2
-    convergence test, alongside three trait-negative rodents
-    (mouse, hamster, Ictidomys tridecemlineatus). Bulk RNA from
-    maternal-fetal interface; same tissue-context caveat as GSE274701
-    applies (midgestation, not cycling endometrium).
+    length." 16 endometrial bulk-RNA samples across 5 species:
+    Papio anubis (baboon, 3), Mesocricetus auratus (hamster, 6 incl.
+    replicates), Carollia perspicillata (bat, 2), Ictidomys
+    tridecemlineatus (13-lined ground squirrel, 2), Mus musculus
+    (mouse, 3). Trait-positive: baboon + bat. Trait-negative: mouse,
+    hamster, ground squirrel. Per-sample raw count tables; one h5ad
+    per species is written by the geo_per_sample_bulk ingest path.
