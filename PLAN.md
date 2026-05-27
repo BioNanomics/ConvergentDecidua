@@ -672,14 +672,31 @@ datasets:**
   deposition: trait-positive {human, macaque, candidate
   tenrec-as-afrotherian-sister-to-elephant-shrew} vs trait-negative
   {opossum, guinea pig, mouse}.
+- [ ] Ingest **GSE155170** (Marinic / Wagner / Kin et al., 2021) —
+  "Evolutionary transcriptomics implicates HAND2 in the origins of
+  implantation and regulation of gestation length." Bulk RNA from
+  maternal-fetal interface across **5 species**: mouse,
+  *Ictidomys tridecemlineatus* (13-lined ground squirrel),
+  *Mesocricetus auratus* (golden hamster), *Papio anubis* (olive
+  baboon — catarrhine, spontaneous), **and *Carollia perspicillata*
+  (Seba's short-tailed fruit bat — phyllostomid, menstruates with
+  decidual sloughing)**. 16 samples. Purpose-built around the
+  evolution-of-implantation question; gives the **bat** trait-
+  positive datum the original Q4 framing called for and a second
+  catarrhine trait-positive (baboon) alongside three trait-negative
+  rodents.
 - [ ] Ingest **GSE109309** (Erkenbrack / Wagner 2018, "The mammalian
   decidual cell evolved from a cellular stress response") — opossum
   endometrial stromal cells, bulk RNA, 15 samples. Direct conceptual
   ancestor of the Q4.1 priming-distance finding; provides the
   trait-negative marsupial outgroup for stress-response framing.
 - [ ] Extend `configs/species.yaml` + ortholog backbone to the new
-  species (opossum, tenrec, guinea pig, macaque). Tier 1 (1:1
-  orthologs) discipline preserved; tier-2 fallback documented.
+  species (opossum, tenrec, guinea pig, macaque, baboon, hamster,
+  13-lined ground squirrel, *Carollia perspicillata*). Tier 1 (1:1
+  orthologs) discipline preserved; tier-2 fallback documented. The
+  bat is the longest evolutionary branch in the set and the most
+  likely to lose 1:1 calls — flag tier-2 fallback rate explicitly in
+  the Q4.2 orthologs report.
 - [ ] Re-run the Q3.2 / Q3.3 / Q4.1 baseline-priming pipeline on the
   expanded set. **Key contrast**: `decidual_score` activation
   amplitude (Q3.2) and `priming_distance` (Q4.1) correlated with the
@@ -758,9 +775,9 @@ comparative-regulatory datasets are ChIP-seq and bulk-RNA, not ATAC:
   explicitly underpowered — with the evidence pinned in
   `results/reports/`.
 - [ ] At least one additional spontaneous-deciduator species (catarrhine
-  primate via macaque from GSE274701, since *Acomys* is not deposited
-  publicly) ingested and scored on the same pipeline as human and
-  mouse.
+  primate via macaque from GSE274701 or baboon from GSE155170; **bat**
+  *Carollia perspicillata* also available from GSE155170**)** ingested
+  and scored on the same pipeline as human and mouse.
 - [ ] Convergence-vs-conservation figure generated.
 - [ ] Manuscript outline updated to reflect whichever finding the
   data supports; venue re-decided.

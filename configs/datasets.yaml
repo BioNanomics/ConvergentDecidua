@@ -171,3 +171,25 @@
   description: |
     Wagner lab "Transposon-mediated gene regulatory network rewiring."
     Cross-species GRN backbone for Q4.3; 4 samples.
+
+- accession: GSE155170
+  species: multi  # mouse, ground_squirrel, baboon, hamster, bat (Carollia perspicillata)
+  tissue: maternal_fetal_interface
+  assay: bulk-RNA-seq
+  condition: implantation_evolution
+  spontaneous_decidualization: mixed  # trait-positive: baboon, Carollia (phyllostomid bat menstruates); trait-negative: mouse, ground_squirrel, hamster
+  menstruates: mixed
+  role: Q4_phylogenetic_expansion
+  priority: high
+  source: GEO
+  expected_format: counts
+  description: |
+    Marinic/Wagner (Kin et al.) "Evolutionary transcriptomics implicates
+    HAND2 in the origins of implantation and regulation of gestation
+    length." 16 samples across 5 species. Provides the **bat
+    (Carollia perspicillata)** trait-positive datum and a second
+    catarrhine trait-positive (Papio anubis) for the Q4.2
+    convergence test, alongside three trait-negative rodents
+    (mouse, hamster, Ictidomys tridecemlineatus). Bulk RNA from
+    maternal-fetal interface; same tissue-context caveat as GSE274701
+    applies (midgestation, not cycling endometrium).
