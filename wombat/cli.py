@@ -679,6 +679,143 @@ def rank_regulators_cmd(cap: int, tf_list: str | None) -> None:
         console.print(f"[bold green]Conserved top-{cap} (head): {top} …[/bold green]")
 
 
+@cli.command("score-baseline")
+@click.option(
+    "--resting-celltypes",
+    default="stromal_fibroblast",
+    show_default=True,
+    help="Comma-separated cell_type labels pooled as the resting baseline.",
+)
+@click.option(
+    "--decidualized-celltypes",
+    default="pre_decidual_stromal,decidual_stromal,senescent_decidual",
+    show_default=True,
+    help="Comma-separated cell_type labels pooled as the decidualized end-state.",
+)
+@click.option("--min-cells", default=20, show_default=True, type=int)
+def score_baseline_cmd(
+    resting_celltypes: str, decidualized_celltypes: str, min_cells: int
+) -> None:
+    """Baseline-priming test (Q4.1): per-species priming distance from
+    resting → decidualized stroma, plus between-species comparison at
+    the resting baseline.
+    """
+    from pathlib import Path
+
+    import anndata as ad
+
+    from src.scoring.baseline_priming import (
+        BaselinePrimingConfig,
+        baseline_priming,
+        between_species_resting,
+    )
+
+    project_root = Path(__file__).resolve().parent.parent
+    scored_path = project_root / "results" / "scored" / "stromal_scored.h5ad"
+    if not scored_path.exists():
+        console.print(f"[red]Missing {scored_path}. Run `wombat score-decidua` first.[/red]")
+        raise SystemExit(1)
+
+    console.print(f"[blue]Loading {scored_path}...[/blue]")
+    adata = ad.read_h5ad(scored_path)
+    score_cols = [c for c in adata.obs.columns if c.endswith("_score")]
+    if not score_cols:
+        console.print("[red]No *_score columns found in adata.obs.[/red]")
+        raise SystemExit(1)
+
+    cfg = BaselinePrimingConfig(
+        resting_celltypes=tuple(s.strip() for s in resting_celltypes.split(",") if s.strip()),
+        decidualized_celltypes=tuple(
+            s.strip() for s in decidualized_celltypes.split(",") if s.strip()
+        ),
+        min_cells_per_group=min_cells,
+    )
+    console.print(
+        f"[blue]Scoring {len(score_cols)} modules: "
+        f"resting={cfg.resting_celltypes}, decidualized={cfg.decidualized_celltypes}...[/blue]"
+    )
+    priming = baseline_priming(adata, score_cols=score_cols, config=cfg)
+    between = between_species_resting(adata, score_cols=score_cols, config=cfg)
+
+    out_dir = project_root / "results" / "reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    priming_csv = out_dir / "baseline_priming.csv"
+    between_csv = out_dir / "baseline_priming_between_species.csv"
+    md_path = out_dir / "baseline_priming.md"
+    priming.to_csv(priming_csv, index=False)
+    between.to_csv(between_csv, index=False)
+
+    # Hypothesis-1 verdict for the decidual_score row(s).
+    verdict_lines: list[str] = []
+    if "decidual_score" in priming["score"].values:
+        ds = priming[priming["score"] == "decidual_score"].set_index("species")
+        if {"human", "mouse"}.issubset(ds.index):
+            h_d = ds.loc["human", "priming_distance"]
+            m_d = ds.loc["mouse", "priming_distance"]
+            gap = m_d - h_d
+            verdict_lines.append(
+                f"- Human priming distance: **{h_d:.3f}** (n_resting="
+                f"{int(ds.loc['human', 'n_resting'])}, "
+                f"n_decidualized={int(ds.loc['human', 'n_decidualized'])})"
+            )
+            verdict_lines.append(
+                f"- Mouse priming distance: **{m_d:.3f}** (n_resting="
+                f"{int(ds.loc['mouse', 'n_resting'])}, "
+                f"n_decidualized={int(ds.loc['mouse', 'n_decidualized'])})"
+            )
+            verdict_lines.append(f"- Gap (mouse − human): **{gap:+.3f}**")
+            if gap > 0.5:
+                verdict_lines.append(
+                    "- **Supports hypothesis 1** (lowered activation threshold): "
+                    "human resting stroma is closer to the decidualized end-state."
+                )
+            elif gap < -0.5:
+                verdict_lines.append(
+                    "- **Refutes hypothesis 1** in the expected direction: mouse "
+                    "resting stroma is closer to the end-state than human."
+                )
+            else:
+                verdict_lines.append(
+                    "- **Inconclusive / refutes hypothesis 1**: the two species "
+                    "have comparable priming distances (|gap| ≤ 0.5 sd). "
+                    "Focus Q4.2 / Q4.3 on hypotheses 2 and 4."
+                )
+
+    with open(md_path, "w") as fh:
+        fh.write("# Baseline-priming test (Q4.1)\n\n")
+        fh.write(
+            "Hypothesis 1 of the Q4 convergent-evolution question: spontaneous-\n"
+            "deciduator stroma sits at a **lowered activation threshold**. If true,\n"
+            "human (spontaneous) resting stromal cells should already score higher\n"
+            f"on `decidual_score` than mouse (induced) resting cells, and the\n"
+            "within-species priming distance (Cohen's d, resting → decidualized)\n"
+            "should be *smaller* in the spontaneous species.\n\n"
+            f"- Resting celltype(s): `{', '.join(cfg.resting_celltypes)}`\n"
+            f"- Decidualized celltype(s): `{', '.join(cfg.decidualized_celltypes)}`\n"
+            f"- Min cells per group: {min_cells}\n\n"
+        )
+        if verdict_lines:
+            fh.write("## Hypothesis 1 verdict (decidual_score)\n\n")
+            fh.write("\n".join(verdict_lines))
+            fh.write("\n\n")
+        fh.write("## Per-species priming distance (all modules)\n\n")
+        fh.write(priming.to_markdown(index=False, floatfmt=".3f"))
+        fh.write("\n\n## Between-species resting comparison\n\n")
+        fh.write(
+            "`cohens_d_b_minus_a` > 0 means species_b has higher resting score "
+            "than species_a. For `decidual_score` with species_a=human, "
+            "species_b=mouse, a **negative** value supports hypothesis 1.\n\n"
+        )
+        fh.write(between.to_markdown(index=False, floatfmt=".3f"))
+        fh.write("\n")
+
+    console.print(f"[green]✓ {priming_csv}[/green]")
+    console.print(f"[green]✓ {between_csv}[/green]")
+    console.print(f"[green]✓ {md_path}[/green]")
+    for line in verdict_lines:
+        console.print(line)
+
+
 # ---------------------------------------------------------------------------
 # Reports command
 # ---------------------------------------------------------------------------
