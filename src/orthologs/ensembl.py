@@ -2,11 +2,17 @@
 
 Queries the Ensembl BioMart for one-to-one orthologs between two species.
 Results are cached locally as Parquet to avoid redundant API calls.
+
+Dataset names, BioMart attribute prefixes, and Compara FTP species
+identifiers are resolved per-call from ``configs/species.yaml`` via the
+``ensembl_dataset``, ``ensembl_prefix``, and ``ensembl_species`` fields,
+so adding a new species is a config edit only.
 """
 
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 
@@ -24,21 +30,40 @@ _BIOMART_MIRRORS = [
     "https://asia.ensembl.org/biomart/martservice",
 ]
 
-# BioMart dataset names per species
-_DATASETS = {
-    "human": "hsapiens_gene_ensembl",
-    "mouse": "mmusculus_gene_ensembl",
-}
 
-# BioMart attribute names for ortholog queries (source → target)
-_ORTHOLOG_ATTRS = {
-    "mouse": {
-        "homolog_ensembl_gene": "mmusculus_homolog_ensembl_gene",
-        "homolog_associated_gene_name": "mmusculus_homolog_associated_gene_name",
-        "homolog_orthology_type": "mmusculus_homolog_orthology_type",
-        "homolog_orthology_confidence": "mmusculus_homolog_orthology_confidence",
-    },
-}
+@lru_cache(maxsize=1)
+def _species_index() -> dict[str, dict]:
+    """Return ``{species_name: entry_dict}`` from configs/species.yaml."""
+    from wombat.config import load_config
+
+    entries = load_config("species")
+    return {entry["name"]: entry for entry in entries}
+
+
+def _species_field(name: str, field: str) -> str:
+    """Look up a required field on a species entry; raise informatively."""
+    idx = _species_index()
+    if name not in idx:
+        msg = f"Unknown species: {name!r}. Known: {sorted(idx)}"
+        raise ValueError(msg)
+    entry = idx[name]
+    if field not in entry or entry[field] is None:
+        msg = (
+            f"species.yaml entry for {name!r} is missing required field "
+            f"{field!r} (needed for Ensembl ortholog lookup)."
+        )
+        raise ValueError(msg)
+    return entry[field]
+
+
+def _ortholog_attrs(target_prefix: str) -> dict[str, str]:
+    """Build the four BioMart ortholog attribute names for a target species."""
+    return {
+        "homolog_ensembl_gene": f"{target_prefix}_homolog_ensembl_gene",
+        "homolog_associated_gene_name": f"{target_prefix}_homolog_associated_gene_name",
+        "homolog_orthology_type": f"{target_prefix}_homolog_orthology_type",
+        "homolog_orthology_confidence": f"{target_prefix}_homolog_orthology_confidence",
+    }
 
 
 def _build_query_xml(
@@ -73,9 +98,10 @@ def fetch_ensembl_orthologs(
     Parameters
     ----------
     source : str
-        Source species name (must be in _DATASETS).
+        Source species name (must exist in ``configs/species.yaml``).
     target : str
-        Target species name (must be in _ORTHOLOG_ATTRS).
+        Target species name (must exist in ``configs/species.yaml`` with
+        an ``ensembl_prefix`` field).
     cache_dir : Path, optional
         Directory to cache raw results. If a cache file exists, it is loaded
         instead of querying the API.
@@ -83,17 +109,15 @@ def fetch_ensembl_orthologs(
     Returns
     -------
     pa.Table
-        Table with columns: human_gene_id, human_symbol, mouse_gene_id,
-        mouse_symbol, orthology_type, confidence.
+        Table with columns: ``{source}_gene_id``, ``{source}_symbol``,
+        ``{target}_gene_id``, ``{target}_symbol``, ``orthology_type``,
+        ``confidence``.
     """
     import requests
 
-    if source not in _DATASETS:
-        msg = f"Unknown source species: {source}. Available: {list(_DATASETS)}"
-        raise ValueError(msg)
-    if target not in _ORTHOLOG_ATTRS:
-        msg = f"Unknown target species: {target}. Available: {list(_ORTHOLOG_ATTRS)}"
-        raise ValueError(msg)
+    source_dataset = _species_field(source, "ensembl_dataset")
+    target_prefix = _species_field(target, "ensembl_prefix")
+    target_attrs = _ortholog_attrs(target_prefix)
 
     # Check cache
     if cache_dir is not None:
@@ -103,7 +127,7 @@ def fetch_ensembl_orthologs(
             return pq.read_table(cache_path)
 
     # Build and send query — try mirrors on failure
-    xml = _build_query_xml(_DATASETS[source], _ORTHOLOG_ATTRS[target])
+    xml = _build_query_xml(source_dataset, target_attrs)
 
     resp = None
     for mirror_url in _BIOMART_MIRRORS:
@@ -116,6 +140,18 @@ def fetch_ensembl_orthologs(
                     "Mirror %s returned BioMart query error: %s",
                     mirror_url,
                     r.text[:500],
+                )
+                continue
+            # Detect HTML responses (e.g. Ensembl "Service unavailable" page,
+            # 403 Forbidden bodies, captive portals). A real TSV response
+            # starts with the column header "Gene stable ID\t...".
+            ctype = (r.headers.get("content-type") or "").lower()
+            stripped = r.text.lstrip()
+            if "html" in ctype or stripped.startswith(("<", "<!DOCTYPE", "<!doctype")):
+                logger.warning(
+                    "Mirror %s returned an HTML page (likely maintenance); first 200 chars: %s",
+                    mirror_url,
+                    stripped[:200].replace("\n", " "),
                 )
                 continue
             resp = r
@@ -150,7 +186,17 @@ def fetch_ensembl_orthologs(
 
 
 def _parse_biomart_response(text: str, source: str, target: str) -> pa.Table:
-    """Parse BioMart TSV response into a PyArrow Table."""
+    """Parse BioMart TSV response into a PyArrow Table.
+
+    BioMart returns ``Gene stable ID`` / ``Gene name`` for the source
+    species (no species qualifier) and ``<Target> gene stable ID`` /
+    ``<Target> gene name`` / ``<Target> homology type`` /
+    ``<Target> orthology confidence`` for the target. The exact target
+    label depends on Ensembl's display name for the species; we therefore
+    pick the target columns as "the stable-ID/name column that is NOT the
+    bare source one" so the parser works for any target species without
+    knowing its display label.
+    """
     import csv
 
     reader = csv.DictReader(StringIO(text), delimiter="\t")
@@ -160,18 +206,14 @@ def _parse_biomart_response(text: str, source: str, target: str) -> pa.Table:
         msg = "BioMart returned no data"
         raise RuntimeError(msg)
 
-    # Standardize column names
-    source_gene_id_col = "Gene stable ID"
-    source_symbol_col = "Gene name"
-
-    # The target columns use BioMart naming — find them dynamically
     fieldnames = reader.fieldnames or []
 
-    # Map BioMart response columns to our standard names
-    # BioMart returns e.g. "Mouse gene stable ID", "Mouse gene name",
-    # "Mouse homology type", "Mouse orthology confidence [0 low, 1 high]"
-    target_gene_id_col = _find_column(fieldnames, "mouse", "gene", "stable")
-    target_symbol_col = _find_column(fieldnames, "mouse", "gene", "name")
+    source_gene_id_col = "Gene stable ID"
+    source_symbol_col = "Gene name"
+    target_gene_id_col = _find_other_column(fieldnames, "stable", exclude=source_gene_id_col)
+    target_symbol_col = _find_other_column(
+        fieldnames, "name", exclude=source_symbol_col, also_exclude=(source_gene_id_col,)
+    )
     orthology_type_col = _find_column(fieldnames, "homology", "type")
     confidence_col = _find_column(fieldnames, "confidence")
 
@@ -207,6 +249,28 @@ def _parse_biomart_response(text: str, source: str, target: str) -> pa.Table:
     )
 
 
+def _find_other_column(
+    fieldnames: list[str],
+    keyword: str,
+    *,
+    exclude: str,
+    also_exclude: tuple[str, ...] = (),
+) -> str:
+    """Find the column containing ``keyword`` that is not ``exclude``.
+
+    Used to locate the target-species ``... stable ID`` / ``... name``
+    columns without needing to know the species' display label.
+    """
+    skip = {exclude, *also_exclude}
+    for col in fieldnames:
+        if col in skip:
+            continue
+        if keyword.lower() in col.lower():
+            return col
+    msg = f"Could not find a column containing {keyword!r} other than {exclude!r} in {fieldnames}"
+    raise KeyError(msg)
+
+
 def _find_column(fieldnames: list[str], *keywords: str) -> str:
     """Find a column name containing all keywords (case-insensitive)."""
     for col in fieldnames:
@@ -220,28 +284,22 @@ def _find_column(fieldnames: list[str], *keywords: str) -> str:
 # Ensembl Compara FTP — pre-built ortholog tables (fallback when BioMart is down)
 _COMPARA_FTP = "https://ftp.ensembl.org/pub/current_tsv/ensembl-compara/homologies"
 
-_COMPARA_SPECIES = {
-    "human": "homo_sapiens",
-    "mouse": "mus_musculus",
-}
-
 
 def _fetch_compara_ftp(source: str, target: str) -> pa.Table:
     """Download pre-built ortholog table from Ensembl Compara FTP.
 
     The Compara FTP provides TSV files with all homology types. We filter
-    for the target species and return the same schema as BioMart.
+    for the target species and return the same schema as BioMart. Latin
+    binomial identifiers come from the ``ensembl_species`` field in
+    ``configs/species.yaml``.
     """
     import gzip
     import io
 
     import requests
 
-    src_species = _COMPARA_SPECIES.get(source)
-    tgt_species = _COMPARA_SPECIES.get(target)
-    if not src_species or not tgt_species:
-        msg = f"Unknown species for Compara FTP: {source} → {target}"
-        raise ValueError(msg)
+    src_species = _species_field(source, "ensembl_species")
+    tgt_species = _species_field(target, "ensembl_species")
 
     # Download from target species directory (contains target→source mappings)
     url = f"{_COMPARA_FTP}/{tgt_species}/"

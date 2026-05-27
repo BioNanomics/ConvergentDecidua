@@ -720,16 +720,33 @@ datasets:**
   phyllostomid trait-positive bat**; this is a follow-up data ask.
   Hamster samples carry NCBI RefSeq IDs (NM_*), so a RefSeq→Ensembl
   bridge is required at the ortholog-mapping step.
-- [ ] Build human→{macaque, baboon, opossum, guinea_pig, hamster,
-  ground_squirrel, bat_carollia, tenrec, armadillo} ortholog backbones.
-  Current `src/orthologs/ensembl.py` is hardcoded to human→mouse
-  (only `mmusculus_homolog_*` BioMart attributes are wired up);
-  generalize to use the `ensembl_prefix` field added to species.yaml
-  and run the build per Tier B species. Tier 1 (1:1 orthologs)
-  discipline preserved; tier-2 fallback documented. The Myotis bat
-  is the longest branch in the set and the most likely to lose 1:1
-  calls — flag tier-2 fallback rate explicitly in the Q4.2 orthologs
-  report. Hamster needs the RefSeq→Ensembl bridge before mapping.
+- [x] **Generalize `src/orthologs/ensembl.py` to all Tier B species.**
+  The module now reads `ensembl_dataset` / `ensembl_prefix` /
+  `ensembl_species` from `configs/species.yaml` rather than from a
+  hard-coded mouse-only dict. BioMart attribute names are derived
+  from the target's `ensembl_prefix`; the parser locates target
+  columns by structural rule (not by species display label) so any
+  Tier B target works without code changes. CLI gained
+  `--target NAME` and `--all-tier-b` options; per-target failures
+  are logged and the loop continues so one bad species (e.g. tenrec,
+  see below) does not block the rest. `_parse_biomart_response` and
+  the mirror-retry loop now detect Ensembl maintenance pages (HTML
+  body / `text/html` content-type) and fall through to the next
+  mirror / Compara FTP fallback. Test coverage:
+  `tests/test_ortholog_dispatch.py` (6 new tests).
+- [ ] **Run human→{macaque, baboon, opossum, guinea_pig, hamster,
+  ground_squirrel, bat_carollia, tenrec, armadillo} backbones.**
+  Blocked 2026-05-27: all three Ensembl BioMart mirrors
+  (`www.ensembl.org`, `useast.ensembl.org`, `asia.ensembl.org`)
+  returned `Service unavailable` HTML / `403 Forbidden` / read
+  timeouts; the Compara FTP fallback at
+  `ftp.ensembl.org/pub/current_tsv/ensembl-compara/homologies` is
+  also unreachable. Code change is in place; rerun
+  `wombat orthologs build --all-tier-b --no-gprofiler` once Ensembl
+  recovers. Expected failure: tenrec (only *Echinops telfairi* is in
+  Ensembl Vertebrates, not *T. ecaudatus*). Hamster still needs the
+  RefSeq→Ensembl bridge before downstream mapping even after the
+  backbone exists.
 - [ ] Re-run the Q3.2 / Q3.3 / Q4.1 baseline-priming pipeline on the
   expanded set. **Key contrast**: `decidual_score` activation
   amplitude (Q3.2) and `priming_distance` (Q4.1) correlated with the

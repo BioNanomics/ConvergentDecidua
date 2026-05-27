@@ -207,25 +207,88 @@ def orthologs() -> None:
 
 @orthologs.command("build")
 @click.option("--no-gprofiler", is_flag=True, help="Skip g:Profiler cross-validation.")
-def orthologs_build(no_gprofiler: bool) -> None:
-    """Build ortholog backbone and orthogroup tables."""
+@click.option(
+    "--target",
+    default="mouse",
+    show_default=True,
+    help="Target species name (must exist in configs/species.yaml). "
+    "Ignored when --all-tier-b is set.",
+)
+@click.option(
+    "--source",
+    default="human",
+    show_default=True,
+    help="Source species name (must exist in configs/species.yaml).",
+)
+@click.option(
+    "--all-tier-b",
+    is_flag=True,
+    help="Build a backbone for every Tier B species (continues past per-target failures).",
+)
+def orthologs_build(no_gprofiler: bool, target: str, source: str, all_tier_b: bool) -> None:
+    """Build human→target ortholog backbone(s).
+
+    Default: human → mouse, written to
+    ``results/orthologs/backbone.parquet`` (preserves the historical
+    output path used by downstream consumers).
+
+    With ``--target <name>`` the backbone is written to
+    ``results/orthologs/backbone__<source>_<target>.parquet``.
+
+    With ``--all-tier-b`` every species in ``configs/species.yaml`` with
+    ``tier: B`` becomes a target in turn; per-target failures are logged
+    and the loop continues so a single missing Ensembl dataset (e.g.
+    tenrec) does not block the rest.
+    """
     from pathlib import Path
 
     from src.orthologs.backbone import build_backbone
+    from wombat.config import load_config
 
     project_root = Path(__file__).resolve().parent.parent
     cache_dir = project_root / "results" / "orthologs" / "cache"
-    output_path = project_root / "results" / "orthologs" / "backbone.parquet"
+    orth_dir = project_root / "results" / "orthologs"
 
-    console.print("[blue]Building ortholog backbone (human → mouse)...[/blue]")
-    backbone = build_backbone(
-        source="human",
-        target="mouse",
-        cache_dir=cache_dir,
-        output_path=output_path,
-        use_gprofiler=not no_gprofiler,
-    )
-    console.print(f"[green]✓ Backbone: {len(backbone)} rows → {output_path}[/green]")
+    if all_tier_b:
+        targets = [s["name"] for s in load_config("species") if s.get("tier") == "B"]
+        if not targets:
+            console.print("[red]No Tier B species found in configs/species.yaml[/red]")
+            raise SystemExit(1)
+    else:
+        targets = [target]
+
+    successes: list[tuple[str, int]] = []
+    failures: list[tuple[str, str]] = []
+
+    for tgt in targets:
+        if not all_tier_b and tgt == "mouse" and source == "human":
+            output_path = orth_dir / "backbone.parquet"  # historical default
+        else:
+            output_path = orth_dir / f"backbone__{source}_{tgt}.parquet"
+
+        console.print(f"[blue]Building ortholog backbone ({source} → {tgt})...[/blue]")
+        try:
+            backbone = build_backbone(
+                source=source,
+                target=tgt,
+                cache_dir=cache_dir,
+                output_path=output_path,
+                use_gprofiler=not no_gprofiler,
+            )
+        except Exception as exc:  # noqa: BLE001 — per-target continue
+            console.print(f"[red]✗ {source} → {tgt} failed: {exc}[/red]")
+            failures.append((tgt, str(exc)))
+            continue
+
+        successes.append((tgt, len(backbone)))
+        console.print(f"[green]✓ {source} → {tgt}: {len(backbone)} rows → {output_path}[/green]")
+
+    if all_tier_b:
+        console.print(f"[bold]Summary: {len(successes)} succeeded, {len(failures)} failed[/bold]")
+        for tgt, n in successes:
+            console.print(f"  ✓ {tgt}: {n} rows")
+        for tgt, err in failures:
+            console.print(f"  ✗ {tgt}: {err}")
 
 
 @orthologs.command("synteny-check")

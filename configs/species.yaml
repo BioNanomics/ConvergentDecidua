@@ -16,6 +16,7 @@
   ensembl_release: 112
   ensembl_dataset: hsapiens_gene_ensembl
   ensembl_prefix: hsapiens
+  ensembl_species: homo_sapiens
   gene_id_prefix: ENSG
   menstruates: true
   spontaneous_decidualization: true
@@ -28,6 +29,7 @@
   ensembl_release: 112
   ensembl_dataset: mmusculus_gene_ensembl
   ensembl_prefix: mmusculus
+  ensembl_species: mus_musculus
   gene_id_prefix: ENSMUSG
   menstruates: false
   spontaneous_decidualization: false
@@ -46,6 +48,7 @@
   ensembl_release: 112
   ensembl_dataset: mfascicularis_gene_ensembl
   ensembl_prefix: mfascicularis
+  ensembl_species: macaca_fascicularis
   gene_id_prefix: ENSMFAG
   menstruates: true
   spontaneous_decidualization: true
@@ -59,6 +62,7 @@
   ensembl_release: 112
   ensembl_dataset: panubis_gene_ensembl
   ensembl_prefix: panubis
+  ensembl_species: papio_anubis
   gene_id_prefix: ENSPANG
   menstruates: true
   spontaneous_decidualization: true
@@ -81,6 +85,7 @@
   ensembl_release: 112
   ensembl_dataset: mlucifugus_gene_ensembl
   ensembl_prefix: mlucifugus
+  ensembl_species: myotis_lucifugus  # alignment reference, not source taxon
   gene_id_prefix: ENSMLUG  # gene-level; counts are at ENSMLUT transcript
                             # level and need tx2gene aggregation downstream
   menstruates: true
@@ -107,6 +112,7 @@
   ensembl_release: 112
   ensembl_dataset: mauratus_gene_ensembl
   ensembl_prefix: mauratus
+  ensembl_species: mesocricetus_auratus
   gene_id_prefix: ENSMAUG
   menstruates: false
   spontaneous_decidualization: false
@@ -124,6 +130,7 @@
   ensembl_release: 112
   ensembl_dataset: itridecemlineatus_gene_ensembl
   ensembl_prefix: itridecemlineatus
+  ensembl_species: ictidomys_tridecemlineatus
   gene_id_prefix: ENSSTOG
   menstruates: false
   spontaneous_decidualization: false
@@ -137,6 +144,7 @@
   ensembl_release: 112
   ensembl_dataset: cporcellus_gene_ensembl
   ensembl_prefix: cporcellus
+  ensembl_species: cavia_porcellus
   gene_id_prefix: ENSCPOG
   menstruates: false
   spontaneous_decidualization: false
@@ -148,8 +156,12 @@
   taxon_id: 9305
   genome_build: TENREC
   ensembl_release: 112
-  ensembl_dataset: tecaudatus_gene_ensembl
+  ensembl_dataset: tecaudatus_gene_ensembl  # NOTE: Tenrec ecaudatus is NOT in
+  # Ensembl Vertebrates (only Echinops telfairi is). Backbone builds against
+  # this dataset will fail at BioMart until either (a) Ensembl adds the
+  # species or (b) we substitute echinops_telfairi as a phylogenetic proxy.
   ensembl_prefix: tecaudatus
+  ensembl_species: tenrec_ecaudatus
   gene_id_prefix: ENSETEG
   menstruates: false  # see notes; literature pin 2026-05-27
   spontaneous_decidualization: false
@@ -180,6 +192,7 @@
   ensembl_release: 112
   ensembl_dataset: mdomestica_gene_ensembl
   ensembl_prefix: mdomestica
+  ensembl_species: monodelphis_domestica
   gene_id_prefix: ENSMODG
   menstruates: false
   spontaneous_decidualization: false  # marsupial; no deep-invasive deciduum
@@ -193,6 +206,7 @@
   ensembl_release: 112
   ensembl_dataset: dnovemcinctus_gene_ensembl
   ensembl_prefix: dnovemcinctus
+  ensembl_species: dasypus_novemcinctus
   gene_id_prefix: ENSDNOG
   menstruates: false
   spontaneous_decidualization: false  # xenarthran; lacks menstrual sloughing
