@@ -102,3 +102,72 @@
     8-br-cAMP + MPA. Six siRNA-NT (control) samples retained: 3 donors ×
     {Day 0, Day 4}. Custom ingest in scripts/ingest_gse104721.py because
     the upstream xls combines counts + TPM in a single sheet.
+
+# --- Q4 phylogenetic / cis-regulatory expansion (scoped 2025-Q4, not yet ingested) ---
+# These accessions were verified live on GEO during Q4 data-availability scoping.
+# Acomys cahirinus endometrial transcriptomes are NOT publicly deposited.
+
+- accession: GSE274701
+  species: multi  # opossum, tenrec, guinea_pig, mouse (+ prior human/macaque integration)
+  tissue: fetal_maternal_interface
+  assay: scRNA-seq
+  condition: midgestation
+  spontaneous_decidualization: mixed  # trait-positive: human, macaque, (?tenrec); trait-negative: opossum, mouse, guinea_pig
+  menstruates: mixed
+  role: Q4_phylogenetic_expansion
+  priority: high
+  source: GEO
+  expected_format: h5ad
+  description: |
+    Mika/Wagner 2024 multi-species single-cell atlas of midgestation
+    fetal-maternal interface. Primary Q4.2 substrate. Tissue is
+    midgestation, not cycling endometrium — Q4.1 priming-distance
+    readout does not extend; use Q3.2-style pseudobulk amplitude.
+
+- accession: GSE109309
+  species: opossum  # Monodelphis domestica
+  tissue: endometrial_stromal
+  assay: bulk-RNA-seq
+  condition: stress_response_decidualization
+  spontaneous_decidualization: false
+  menstruates: false
+  role: Q4_trait_negative_outgroup
+  priority: medium
+  source: GEO
+  expected_format: counts
+  description: |
+    Erkenbrack/Wagner 2018 "The mammalian decidual cell evolved from a
+    cellular stress response." Opossum endometrial stromal cells under
+    stress vs control; 15 samples. Conceptual ancestor of Q4.1
+    priming-distance hypothesis.
+
+- accession: GSE61793
+  species: human  # + cross-species components
+  tissue: endometrial_stromal
+  assay: ChIP-seq
+  condition: TE_regulatory_landscape
+  spontaneous_decidualization: true
+  menstruates: true
+  role: Q4_cis_regulatory
+  priority: high
+  source: GEO
+  expected_format: bed
+  description: |
+    Lynch lab "Ancient transposable elements transformed the uterine
+    regulatory landscape." Primary Q4.3 substrate for the MER20/MER41
+    cis-rewiring (Lynch/Wagner) hypothesis. 13 samples.
+
+- accession: GSE30708
+  species: multi  # human, armadillo, opossum
+  tissue: endometrial_stromal
+  assay: bulk-RNA-seq
+  condition: GRN_rewiring
+  spontaneous_decidualization: mixed
+  menstruates: mixed
+  role: Q4_cis_regulatory
+  priority: medium
+  source: GEO
+  expected_format: counts
+  description: |
+    Wagner lab "Transposon-mediated gene regulatory network rewiring."
+    Cross-species GRN backbone for Q4.3; 4 samples.

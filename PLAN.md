@@ -647,41 +647,87 @@ The four leading hypotheses (testable, distinguishable):
   the alternative that the gap reflects pregnancy-vs-cycle staging
   rather than species biology.
 
-### Q4.2 — Phylogenetic expansion (rodent-vs-rodent contrast)
+### Q4.2 — Phylogenetic expansion (multi-species trait contrast)
 
-- [ ] Add **spiny mouse** (*Acomys cahirinus*) — closest rodent
-  natural-experiment to humans (menstruates, decidualizes
-  spontaneously). Candidate datasets: Bellofiore / Hilliard
-  endometrium-across-cycle series (GSE124753, GSE149298 — verify
-  before scoping).
-- [ ] Add **rat** (*Rattus norvegicus*) as a second induced-deciduator
-  outgroup. Candidate: GSE32916 or equivalent endometrial time course.
-- [ ] Extend `configs/species.yaml` + ortholog backbone to 4 species;
-  keep Tier 1 (1:1) discipline.
-- [ ] Re-run the Q3.2 / Q3.3 pipeline on the 4-species set. **Key
-  contrast**: `decidual_score` activation amplitude correlated with
-  the spontaneous/induced trait controlling for phylogeny (paired
-  catarrhine-vs-*Mus* and *Acomys*-vs-*Mus* contrasts; or `phylolm`
-  if a fifth species lands).
+**Data-availability scoping (done 2025-Q4):** verified the placeholder
+accessions previously listed here (GSE124753, GSE149298, GSE32916)
+and found they point to unrelated studies (cat parvovirus, human
+T-cell autoimmunity, mouse macrophage transcription). Searched GEO
+and Europe PMC for deposited *Acomys cahirinus* endometrial
+transcriptomes; **none exist publicly as of the search date.** The
+Bellofiore / McKenna line of work is histology + endocrinology only;
+one 2022 SAGE-seq conference abstract was never deposited. Spiny
+mouse is therefore **out of scope as a drop-in dataset** for Q4.2 —
+keeping it would require either author contact or a new generating
+experiment, neither of which is in Q4 scope.
+
+**Replacement plan — use the actual published comparative deciduagenesis
+datasets:**
+
+- [ ] Ingest **GSE274701** (Mika / Wagner group, 2024) —
+  multi-species single-cell atlas of midgestation fetal-maternal
+  interface (opossum, tenrec, guinea pig, mouse; integrated with
+  prior human + macaque). H5AD download available, 23 samples.
+  Provides the phylogenetic-expansion trait contrast in one
+  deposition: trait-positive {human, macaque, candidate
+  tenrec-as-afrotherian-sister-to-elephant-shrew} vs trait-negative
+  {opossum, guinea pig, mouse}.
+- [ ] Ingest **GSE109309** (Erkenbrack / Wagner 2018, "The mammalian
+  decidual cell evolved from a cellular stress response") — opossum
+  endometrial stromal cells, bulk RNA, 15 samples. Direct conceptual
+  ancestor of the Q4.1 priming-distance finding; provides the
+  trait-negative marsupial outgroup for stress-response framing.
+- [ ] Extend `configs/species.yaml` + ortholog backbone to the new
+  species (opossum, tenrec, guinea pig, macaque). Tier 1 (1:1
+  orthologs) discipline preserved; tier-2 fallback documented.
+- [ ] Re-run the Q3.2 / Q3.3 / Q4.1 baseline-priming pipeline on the
+  expanded set. **Key contrast**: `decidual_score` activation
+  amplitude (Q3.2) and `priming_distance` (Q4.1) correlated with the
+  spontaneous/induced trait controlling for phylogeny via paired
+  catarrhine-vs-rodent contrasts and (if tenrec menstruation status
+  literature supports) afrotherian-vs-mouse contrast; `phylolm`
+  becomes feasible at n=6 species.
 - [ ] New: `src/scoring/trait_contrast.py`.
+- [ ] **Tissue caveat.** GSE274701 is midgestation fetal-maternal
+  interface, not cycling endometrium. Q4.1's
+  resting→decidualized priming distance does not extend directly;
+  pseudobulk per-species "decidual program" amplitude (Q3.2-style)
+  is the correct readout. Document this in
+  `results/reports/baseline_priming.md` as a follow-up.
 
 ### Q4.3 — cis-regulatory layer (Lynch hypothesis)
 
-- [ ] Ingest comparative endometrial ATAC: Mika et al. 2021
-  GSE174068 (human / rat / rabbit / possum / cow stromal cells, with
-  and without cAMP+MPA decidualization stimulus).
-- [ ] New `src/cis_regulatory/` module:
-  - `atac_qc.py` — peak calls, FRiP, blacklist filtering.
+**Data-availability scoping (done 2025-Q4):** the previously listed
+"Mika 2021 GSE174068" is wrong (real GSE174068 is mouse exosome STAT6
+anti-tumor). No "Mika 2021 comparative endometrial ATAC" deposition
+exists under that description. The actual usable Lynch / Wagner
+comparative-regulatory datasets are ChIP-seq and bulk-RNA, not ATAC:
+
+- [ ] Ingest **GSE61793** (Lynch lab, "Ancient transposable elements
+  transformed the uterine regulatory landscape") — human ChIP-seq /
+  TE-derived regulatory landscape; 13 samples; directly probes the
+  MER20 / MER41 cis-rewiring hypothesis.
+- [ ] Ingest **GSE30708** (Wagner lab, "Transposon-mediated gene
+  regulatory network rewiring") — human + armadillo + opossum,
+  4 samples; cross-species GRN-rewiring backbone.
+- [ ] New `src/cis_regulatory/` module (renamed scope: ChIP-seq +
+  TE-overlap, not ATAC):
+  - `chip_qc.py` — peak calls, FRiP, blacklist filtering for the
+    GSE61793 ChIP tracks.
   - `motif_enrichment.py` — JASPAR 2024 motifs for the Q3.4 conserved
     regulator set scanned against peaks near `decidual_score` target
     genes (±50 kb TSS).
   - `te_overlap.py` — RepeatMasker overlap, flagging MER20 / MER41
-    derived enhancers.
-- [ ] **Decision rule.** Per-TF motif enrichment in open chromatin
-  near decidualization genes preferentially in spontaneous-deciduator
-  species → supports hypothesis 2. TE-derived element fraction higher
-  in spontaneous-deciduator open chromatin → supports the
-  Lynch/Wagner model specifically.
+    derived enhancers (the primary Lynch/Wagner-model test).
+- [ ] **Decision rule.** Per-TF motif enrichment near
+  decidualization genes preferentially in spontaneous-deciduator
+  species → supports hypothesis 2. TE-derived element fraction
+  elevated in spontaneous-deciduator regulatory peaks → supports the
+  Lynch/Wagner model specifically. (Note: with only human ChIP in
+  GSE61793, the cross-species test relies on GSE30708 bulk RNA
+  divergence near TE-flagged loci; a true cross-species open-
+  chromatin test would require a generating experiment or a future
+  comparative-ATAC deposition.)
 
 ### Q4.4 — Convergence-aware manuscript reframe
 
@@ -711,8 +757,10 @@ The four leading hypotheses (testable, distinguishable):
 - [ ] Each of hypotheses 1, 2 either supported, refuted, or
   explicitly underpowered — with the evidence pinned in
   `results/reports/`.
-- [ ] At least one spontaneous-deciduator rodent (*Acomys* preferred)
-  ingested and scored on the same pipeline as human and mouse.
+- [ ] At least one additional spontaneous-deciduator species (catarrhine
+  primate via macaque from GSE274701, since *Acomys* is not deposited
+  publicly) ingested and scored on the same pipeline as human and
+  mouse.
 - [ ] Convergence-vs-conservation figure generated.
 - [ ] Manuscript outline updated to reflect whichever finding the
   data supports; venue re-decided.
