@@ -734,19 +734,24 @@ datasets:**
   body / `text/html` content-type) and fall through to the next
   mirror / Compara FTP fallback. Test coverage:
   `tests/test_ortholog_dispatch.py` (6 new tests).
-- [ ] **Run human→{macaque, baboon, opossum, guinea_pig, hamster,
-  ground_squirrel, bat_carollia, tenrec, armadillo} backbones.**
-  Blocked 2026-05-27: all three Ensembl BioMart mirrors
-  (`www.ensembl.org`, `useast.ensembl.org`, `asia.ensembl.org`)
-  returned `Service unavailable` HTML / `403 Forbidden` / read
-  timeouts; the Compara FTP fallback at
-  `ftp.ensembl.org/pub/current_tsv/ensembl-compara/homologies` is
-  also unreachable. Code change is in place; rerun
-  `wombat orthologs build --all-tier-b --no-gprofiler` once Ensembl
-  recovers. Expected failure: tenrec (only *Echinops telfairi* is in
-  Ensembl Vertebrates, not *T. ecaudatus*). Hamster still needs the
-  RefSeq→Ensembl bridge before downstream mapping even after the
-  backbone exists.
+- [x] **Run human→{macaque, baboon, opossum, guinea_pig, hamster,
+  ground_squirrel, bat_carollia, armadillo} backbones.** Eight of
+  nine Tier B targets built (row counts after one-to-one filter
+  upstream of `results/orthologs/backbone__human_<tgt>.parquet`):
+  macaque 23217, baboon 22718, armadillo 22557, bat_carollia 21535,
+  opossum 20283, guinea_pig 19996, ground_squirrel 19586, hamster
+  19134. Tenrec excluded — only *Echinops telfairi* is in Ensembl
+  Vertebrates, not *T. ecaudatus*; substitute *E. telfairi* later if
+  the comparative analysis needs an afrotherian. Two hardening
+  follow-ups landed during this run: (a) a 0-row no-cache guard so
+  flaky BioMart responses (truncated TSV with valid header but no
+  data rows) raise instead of poisoning the parquet cache; (b)
+  `_fetch_compara_ftp` now tries the target-species Compara directory
+  first and falls back to the source-species (`homo_sapiens`)
+  directory when the target's per-species file does not contain
+  homologies for the source (baboon's `papio_anubis/` file has zero
+  `homo_sapiens` rows). Hamster still needs the RefSeq→Ensembl
+  bridge before downstream mapping consumes the backbone.
 - [ ] Re-run the Q3.2 / Q3.3 / Q4.1 baseline-priming pipeline on the
   expanded set. **Key contrast**: `decidual_score` activation
   amplitude (Q3.2) and `priming_distance` (Q4.1) correlated with the

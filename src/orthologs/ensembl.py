@@ -165,6 +165,14 @@ def fetch_ensembl_orthologs(
         table = _fetch_compara_ftp(source, target)
         logger.info("Retrieved %d ortholog rows from Compara FTP", len(table))
 
+        if len(table) == 0:
+            msg = (
+                f"All BioMart mirrors failed AND Compara FTP returned 0 rows "
+                f"for {source}->{target}. Refusing to cache an empty result; "
+                f"retry when Ensembl is healthy."
+            )
+            raise RuntimeError(msg)
+
         if cache_dir is not None:
             cache_dir.mkdir(parents=True, exist_ok=True)
             pq.write_table(table, cache_path)
@@ -175,6 +183,17 @@ def fetch_ensembl_orthologs(
     # Parse TSV response
     table = _parse_biomart_response(resp.text, source, target)
     logger.info("Retrieved %d ortholog rows from Ensembl", len(table))
+
+    if len(table) == 0:
+        # The BioMart response was valid TSV (passed the HTML / Query ERROR
+        # guards) but contained zero usable ortholog rows. This usually means
+        # the upstream stream was truncated mid-response. Don't cache the
+        # empty parse — let the next run retry.
+        msg = (
+            f"BioMart parsed 0 ortholog rows for {source}->{target}. "
+            f"Likely a truncated response; refusing to cache. Retry."
+        )
+        raise RuntimeError(msg)
 
     # Cache result
     if cache_dir is not None:
@@ -301,65 +320,80 @@ def _fetch_compara_ftp(source: str, target: str) -> pa.Table:
     src_species = _species_field(source, "ensembl_species")
     tgt_species = _species_field(target, "ensembl_species")
 
-    # Download from target species directory (contains target→source mappings)
-    url = f"{_COMPARA_FTP}/{tgt_species}/"
-    logger.info("Listing Compara FTP directory: %s", url)
-    resp = requests.get(url, timeout=60)
-    resp.raise_for_status()
-
-    # Find the protein homology file
+    import csv
     import re
 
-    matches = re.findall(r'href="(Compara\.\d+\.protein_default\.homologies\.tsv\.gz)"', resp.text)
-    if not matches:
-        msg = f"No Compara protein homology file found at {url}"
-        raise RuntimeError(msg)
+    def _try_dir(dir_species: str, want_other: str) -> pa.Table:
+        """Fetch the Compara homologies TSV under ``dir_species`` and filter
+        rows where ``homology_species == want_other``.
 
-    file_url = f"{_COMPARA_FTP}/{tgt_species}/{matches[0]}"
-    logger.info("Downloading Compara orthologs from %s", file_url)
-    resp = requests.get(file_url, timeout=300, stream=True)
-    resp.raise_for_status()
+        Ensembl Compara only ships each pair on one side (typically the
+        smaller / less-paired genome's directory). For some species
+        (e.g. ``papio_anubis``) the per-species file does not include
+        ``homo_sapiens`` at all, so we may need to try both directions.
+        """
+        url = f"{_COMPARA_FTP}/{dir_species}/"
+        logger.info("Listing Compara FTP directory: %s", url)
+        resp = requests.get(url, timeout=60)
+        resp.raise_for_status()
+        matches = re.findall(
+            r'href="(Compara\.\d+\.protein_default\.homologies\.tsv\.gz)"', resp.text
+        )
+        if not matches:
+            msg = f"No Compara protein homology file found at {url}"
+            raise RuntimeError(msg)
+        file_url = f"{url}{matches[0]}"
+        logger.info("Downloading Compara orthologs from %s", file_url)
+        resp = requests.get(file_url, timeout=600)
+        resp.raise_for_status()
+        raw = gzip.decompress(resp.content)
+        reader = io.StringIO(raw.decode("utf-8"))
+        tsv_reader = csv.DictReader(reader, delimiter="\t")
 
-    # Decompress and parse — filter for source species
-    raw = gzip.decompress(resp.content)
-    reader = io.StringIO(raw.decode("utf-8"))
+        # Identify source vs target columns by which side carries which species.
+        # The file under dir_species has species=dir_species, homology_species=other.
+        # We want source on the source side regardless of directory.
+        source_ids: list[str] = []
+        target_ids: list[str] = []
+        orth_types: list[str] = []
+        confidences: list[int] = []
 
-    # TSV columns: gene_stable_id, protein_stable_id, species, identity,
-    #   homology_type, homology_gene_stable_id, homology_protein_stable_id,
-    #   homology_species, homology_identity, dn, ds, goc_score,
-    #   wga_coverage, is_high_confidence, homology_id
-    import csv
+        if dir_species == src_species:
+            src_col, tgt_col = "gene_stable_id", "homology_gene_stable_id"
+        else:
+            src_col, tgt_col = "homology_gene_stable_id", "gene_stable_id"
 
-    tsv_reader = csv.DictReader(reader, delimiter="\t")
+        for row in tsv_reader:
+            if row.get("homology_species") != want_other:
+                continue
+            source_ids.append(row[src_col])
+            target_ids.append(row[tgt_col])
+            orth_types.append(row.get("homology_type", ""))
+            conf = row.get("is_high_confidence", "0")
+            confidences.append(int(conf) if conf.isdigit() else 0)
 
-    source_ids = []
-    source_symbols = []  # Compara doesn't have symbols — filled later
-    target_ids = []
-    target_symbols = []
-    orth_types = []
-    confidences = []
+        return pa.table(
+            {
+                f"{source}_gene_id": source_ids,
+                f"{source}_symbol": [""] * len(source_ids),
+                f"{target}_gene_id": target_ids,
+                f"{target}_symbol": [""] * len(target_ids),
+                "orthology_type": orth_types,
+                "confidence": confidences,
+            }
+        )
 
-    for row in tsv_reader:
-        if row.get("homology_species") != src_species:
-            continue
+    # Try target directory first (usually smaller), fall back to source directory.
+    table = _try_dir(tgt_species, src_species)
+    if len(table) == 0:
+        logger.warning(
+            "Compara file under %s/ contained no %s homologies; retrying via %s/ directory.",
+            tgt_species,
+            src_species,
+            src_species,
+        )
+        table = _try_dir(src_species, tgt_species)
 
-        target_ids.append(row["gene_stable_id"])
-        target_symbols.append("")  # Compara TSV doesn't include gene symbols
-        source_ids.append(row["homology_gene_stable_id"])
-        source_symbols.append("")
-        orth_types.append(row.get("homology_type", ""))
-        conf = row.get("is_high_confidence", "0")
-        confidences.append(int(conf) if conf.isdigit() else 0)
+    logger.info("Parsed %d %s→%s ortholog rows from Compara", len(table), source, target)
 
-    logger.info("Parsed %d %s→%s ortholog rows from Compara", len(source_ids), source, target)
-
-    return pa.table(
-        {
-            f"{source}_gene_id": source_ids,
-            f"{source}_symbol": source_symbols,
-            f"{target}_gene_id": target_ids,
-            f"{target}_symbol": target_symbols,
-            "orthology_type": orth_types,
-            "confidence": confidences,
-        }
-    )
+    return table
