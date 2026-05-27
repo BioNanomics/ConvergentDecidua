@@ -745,6 +745,60 @@ datasets:**
   is the correct readout. Document this in
   `results/reports/baseline_priming.md` as a follow-up.
 
+#### Q4.2 trait-coverage gaps (surfaced by the 2026-05-27 ingest round)
+
+The 2026-05-27 ingest closeout surfaced two gaps in the
+spontaneous-decidualization trait-positive species coverage. Both
+are tracked here as scoped follow-ups, **not** Q4.2 blockers — the
+trait contrast can already be run on the catarrhine-vs-rodent axis
+with the data in hand (baboon trait-positive from GSE155170 against
+5 trait-negative rodents from GSE155170 + GSE274701).
+
+- [x] **Pin tenrec menstruation status to literature** (2026-05-27).
+  Verdict: **trait-NEGATIVE** (induced deciduator, seasonal estrous
+  cycle). Evidence: Strassmann 1996 (QRB) menstrual-species catalog
+  does NOT list tenrec; Nicoll & Racey 1985 (*Reproduction* 74:47)
+  describe a follicular/ovulatory cycle, not a menstrual one;
+  Poppitt & Speakman 1994 (*Physiol Zool* 67) describe seasonal
+  breeding with defined gestation, no cyclic endometrial sloughing.
+  Hemochorial placentation (Carter et al. 2004, *Placenta*) does
+  NOT imply menstruation (mouse, rat, guinea pig are hemochorial
+  and trait-negative). The afrotherian-menstruation argument
+  originates from elephant shrew (Macroscelididae, Emera & Wagner
+  2012); Tenrecidae are a sister Afrotherian family and the
+  inference does not transfer. **Year-one role:** the 29,652-cell
+  GSE274701 tenrec h5ad is a **deep afrotherian trait-NEGATIVE
+  outgroup** that widens the phylogenetic span of the trait-negative
+  pool, not a trait-positive datum. `configs/species.yaml` updated
+  (menstruates: false, spontaneous_decidualization: false). Baboon
+  (GSE155170, n=3) remains the sole non-human trait-positive datum
+  in current hand.
+
+- [ ] **Trace the macaque reference in Mika 2024 (GSE274701) methods.**
+  The Mika et al. 2024 paper text describes integration with prior
+  human + macaque scRNA, but the GSE274701 deposit ships only
+  guinea_pig / mouse / opossum / tenrec (confirmed by ingest
+  2026-05-27). The macaque reference dataset is published somewhere
+  — read the Mika 2024 methods, extract the accession, and add to
+  `configs/datasets.yaml` if usable. If unavailable, document and
+  rely on baboon (GSE155170, n=3) as the sole catarrhine
+  trait-positive datum for Q4.2.
+
+- [ ] **Phyllostomid bat sweep + author email.** GSE155170 "Bat"
+  samples are *Myotis lucifugus* (vespertilionid, trait-NEGATIVE
+  — ENSMLUT prefix), not *Carollia perspicillata* (phyllostomid,
+  trait-positive) as the Marinic/Kin/Wagner paper text suggested.
+  Action: (1) one-pass GEO + EuropePMC sweep for
+  Carollia/Phyllostomus/Desmodus/Artibeus endometrium or uterus
+  transcriptomes; (2) if empty, email Marinic/Kin/Wagner asking
+  whether Carollia BAMs ever existed (possible misfile). If both
+  return empty, **downgrade the phyllostomid bat from a Q4.2
+  requirement to a documented limitation** in
+  `docs/manuscript_outline.md`; the convergence test still has
+  independent trait-positive lineages from {human, baboon,
+  potentially macaque} — thin without a phyllostomid, but
+  defensible if the macaque trace succeeds.
+
 ### Q4.3 — cis-regulatory layer (Lynch hypothesis)
 
 **Data-availability scoping (done 2025-Q4):** the previously listed

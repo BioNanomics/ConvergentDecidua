@@ -135,16 +135,27 @@
   ensembl_dataset: tecaudatus_gene_ensembl
   ensembl_prefix: tecaudatus
   gene_id_prefix: ENSETEG
-  menstruates: unknown  # afrotherian sister to elephant shrew (which menstruates)
-  spontaneous_decidualization: unknown
+  menstruates: false  # see notes; literature pin 2026-05-27
+  spontaneous_decidualization: false
   tier: B
   source_datasets: [GSE274701]
   notes: |
-    Trait status uncertain. Tenrec is afrotherian and is the closest
-    deposited sister to elephant shrew (Macroscelides), which IS a
-    documented spontaneous menstruator. Treat as candidate-positive
-    in the Q4.2 trait contrast; do a literature follow-up before
-    assigning the trait label in the final convergence figure.
+    Trait label PINNED 2026-05-27 to trait-NEGATIVE (induced
+    deciduator, seasonal estrous cycle). Tenrec has a hemochorial
+    placenta (Carter, Blankenship, Künzle, Enders 2004, Placenta),
+    but hemochorial != menstrual (mouse, rat, guinea pig are
+    hemochorial and trait-negative). Strassmann 1996 (QRB) — the
+    canonical menstrual-species catalog — does NOT list tenrec.
+    Nicoll & Racey 1985 (Reproduction 74:47) describe a
+    follicular/ovulatory cycle, not a menstrual one; Poppitt &
+    Speakman 1994 (Physiol Zool 67) describe seasonal breeding
+    with defined gestation, no cyclic endometrial sloughing.
+    The afrotherian-menstruation argument originates from elephant
+    shrew (Macroscelididae, Emera & Wagner 2012); Tenrecidae are a
+    sister Afrotherian family and the inference does not transfer.
+    Year-one role in Q4.2: deep afrotherian trait-NEGATIVE outgroup
+    that widens the phylogenetic span of the trait-negative pool;
+    NOT a trait-positive datum.
 
 - name: opossum
   common_name: Gray short-tailed opossum
