@@ -1,7 +1,19 @@
 # Manuscript outline — ConvergentDecidua
 
-**Status:** outline drafted 2026-05-27 (Q3.6 venue checkpoint).
-**Chosen venue:** **GigaScience** (Data Note / Research Article hybrid).
+**Status:** *provisional scaffold.* Drafted 2026-05-27 at the Q3.6
+checkpoint against the conservation-only framing. **§1 (venue), §2
+(title), and §3 (headline finding) are superseded** by the Q4 reframe
+(convergent evolution of spontaneous decidualization) and will be
+re-decided in **Q5.1** with Q4.1–Q4.3 evidence in hand. §4–§8 (figure
+plan, methods, reproducibility, risks, submission checklist) remain
+the working scaffold and will gain a fifth main figure
+(convergence-vs-conservation scatter) per PLAN.md Q4.4.
+
+**Chosen venue (provisional, pending Q5.1 re-decision):** GigaScience
+(Data Note / Research Article hybrid) — conditional on the conservation
+story carrying the manuscript alone; **withdrawn** as the default if
+Q4 yields a defensible convergence finding (eLife / Genome Biology /
+PNAS re-enter the table).
 
 ---
 
