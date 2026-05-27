@@ -383,12 +383,22 @@ interpretation. Fix:
       Tier 1 `ortholog_one2one` (confidence=1). Backbone built
       2026-04-26 via Ensembl Biomart (specific Ensembl release not
       pinned — recorded as a known limitation in the memo).
-- [ ] **Expression-side residual (IGFBP1 only).** Raw-vs-remapped
-      mouse-matrix audit for IGFBP1: confirm `Igfbp1` symbol survives
-      the backbone remap end-to-end, then check per-`cycle_stage`
-      pseudobulk before drawing biological conclusions. Scoped to
-      IGFBP1-based claims only — not a general Q3 blocker. Tracked in
-      `docs/marker_recovery_plan.md`.
+- [x] **Expression-side residual (IGFBP1 only).** `scripts/diagnose_igfbp1_mouse.py`
+      (2026-05-27) confirms `Igfbp1` is **0.03 % expressing in raw
+      mouse cells** (pre-orthology) and **0.03 % post-remap** in the
+      mouse subset of the integrated h5ad. The pipeline is not losing
+      signal — there is essentially no signal to begin with in
+      GSE226417's T55–T105 early-pregnancy window. Per-`(orig.ident,
+      time)` pseudobulk shows 0–3 reads across every stage (one
+      outlier in a 25-cell sample; not defensible as biology). Audit
+      tables + verdict appended to `docs/marker_recovery_plan.md`
+      under `## IGFBP1 mouse audit`. **Year-one consequence:** IGFBP1
+      cannot carry a cross-species claim from GSE226417; Q3 IGFBP1-
+      based statements must restrict to the human side or wait for a
+      later-pregnancy mouse dataset (E-MTAB-11491, Q3 stretch). The
+      `protected_core` panel composition is unchanged so the 0 %
+      remains visible as a transparency diagnostic in
+      `integration_qc.md`.
 - [x] **Per-locus alignment sanity check (automated).** `src/orthologs/synteny.py`
       + `wombat orthologs synteny-check` query the Ensembl REST
       `/homology/symbol/{species}/{symbol}` endpoint for each
@@ -413,11 +423,28 @@ interpretation. Fix:
     enforced by CI. List the exact commands a reviewer needs.
   Done in commit `133a047`.
 
-- [ ] Re-run integration QC. If LISI is still ≈ 1.00 even with the
-  protected core preserved, **do not force biology through the
-  integrated UMAP**. Pivot the Q3 evidence chain to matched-state
-  module scores + pseudobulk comparisons on the preserved full gene
-  space. Decide and document in PLAN.md before opening Q3.1.
+### Gate item E — LISI re-evaluation + Q3 evidence-chain decision
+
+- [x] Re-ran `wombat generate-reports` (2026-05-27) against the
+      post-Gate-A integrated h5ad
+      (`results/integrated/stromal_cross_species.h5ad`, 24,727 cells
+      × 11,507 genes, protected-core preserved). **LISI is still
+      ≈ 1.00** on both axes (species: median 1.00 / mean 1.02;
+      dataset: median 1.00 / mean 1.02). Geometry-vs-biology split
+      did not unlock cross-species mixing in the Harmony embedding.
+      All six protected-core markers (PGR, FOXO1, HAND2, WNT4,
+      IGFBP1, IL15) now report `in_joint_var = True` in
+      `results/reports/integration_qc.md`.
+- [x] **Decision (pre-committed in the closeout review, now
+      formally adopted):** the integrated UMAP is demoted to an
+      illustrative-only figure. **Q3 cross-species evidence chain =
+      matched-state module scores (`src/scoring/engine.py`) +
+      pseudobulk on the full Tier 1 gene space retained in
+      `.X` / `.raw` of the integrated h5ad.** No cross-species claim
+      may rest on UMAP neighborhood structure, integration cluster
+      identity, or LISI-derived mixing arguments. Module-level FDR
+      (Q3.2) and per-stage pseudobulk comparisons become the primary
+      evidence carriers.
 
 ### Q2 closeout deliverables (companions to the gate)
 
@@ -444,11 +471,19 @@ interpretation. Fix:
 conservative candidate-regulator shortlists. `species_overrides` moved
 earlier, so Q3 starts with statistically clean inputs.
 
-> **Pre-Q3 acceptance gate closed (all five items A–E checked).**
-> Q3.1 may now begin. The single open caveat is the IGFBP1 mouse
-> 0 % expression diagnosis (symbol / stage / divergence); it is a
-> Q3 prerequisite only for IGFBP1-based claims, not a general Q3
-> blocker.
+> **Pre-Q3 acceptance gate fully closed (all five items A–E checked,
+> 2026-05-27).** Q3.1 may now begin. Residual caveats — both
+> *diagnosed and documented*, not blocking the gate:
+> 1. **Cross-species mixing is zero in Harmony** (LISI ≈ 1.00 even
+>    after geometry/biology split). Mitigated by Gate-E decision:
+>    UMAP demoted to illustrative; primary cross-species evidence
+>    chain is matched-state module scores + pseudobulk on the full
+>    Tier 1 gene space.
+> 2. **IGFBP1 is essentially absent (0.03 %) in mouse GSE226417**
+>    (orthology + remap confirmed clean; signal is not in the
+>    dataset). IGFBP1-based Q3 claims must restrict to human-side
+>    or wait for E-MTAB-11491 (Q3 stretch). Other five protected-
+>    core markers are unaffected.
 
 ### Q3.1 — Bulk-data score validation
 
@@ -535,9 +570,9 @@ earlier, so Q3 starts with statistically clean inputs.
 | Mouse stromal recall (~67% post-Q2.1) | 🟢 Resolved — Q2.4 hierarchical lineage gate + honest target (dataset is mixed UE+DSC by design) | Score-margin / celltypist optional, not blocking |
 | Python 3.9 compat bugs | 🟢 Resolved (Q2.2) | `requires-python = ">=3.11,<3.13"` |
 | Pre-existing lint debt breaks "CI green" claim | 🟢 Resolved (Q2.2) | All 11 errors fixed; CI now actually green |
-| **Cross-species LISI ≈ 1.00** (no mixing in Harmony embedding) | 🟠 Surfaced by Q2.4 QC report | **Pre-Q3 gate item E:** re-evaluate after geometry/biology split; pivot to matched-state module-score + pseudobulk evidence if LISI stays ≈ 1.00. Do not force biology through integrated UMAP. |
+| **Cross-species LISI ≈ 1.00** (no mixing in Harmony embedding) | � Resolved by Gate-E decision (2026-05-27): post-Gate-A re-run still shows LISI ≈ 1.00; UMAP demoted to illustrative; Q3 cross-species evidence chain = matched-state module scores + pseudobulk on the preserved full Tier 1 gene space | Re-evaluate only if a later integration method (scVI on GPU, Q4 stretch) materially changes the embedding |
 | **Canonical markers dropped by HVG selection** (PGR/HAND2/WNT4/PRL/LEFTY2 absent from joint var set) | � Resolved by pre-Q3 gate item A (geometry/biology split + `protected_core` carveout in `integrate.py`). Protected core (PGR/FOXO1/HAND2/WNT4/IGFBP1/IL15) all present in integrated h5ad. PRL/LEFTY2 remain exploratory. | n/a |
-| **IGFBP1 0% expression in mouse** (separate signal flagged by Q2.4 report) | 🟠 Orthology / stage check pending (`docs/marker_recovery_plan.md`) | Q3 prerequisite for any IGFBP1-based claim; verify `Igfbp1` symbol/case + per-cycle_stage pseudobulk |
+| **IGFBP1 0% expression in mouse** (separate signal flagged by Q2.4 report) | � Diagnosed 2026-05-27 (`scripts/diagnose_igfbp1_mouse.py`): orthology clean (Gate-C synteny), remap clean (0.03 % pre = 0.03 % post), per-`(orig.ident,time)` pseudobulk = capture-floor noise across T55–T105. Dataset-capture / stage-coverage issue, not a pipeline bug | IGFBP1 Q3 claims restricted to human side, or wait for E-MTAB-11491 (Q3 stretch); panel composition unchanged so the 0 % stays visible as a transparency diagnostic |
 | **Orthology layer not externally validated** (g:Profiler 0/16168 Tier 1 confirmations) | � Resolved for the protected core by `docs/ortholog_spotcheck.md` (5/6 cleared via Ensembl Compara + HGNC/MGI + functional literature; IGFBP1 ortholog OK but mouse 0 % expression caveat tracked separately) | Broader backbone validation remains a Q4-stretch item; not a year-one blocker |
 | **"CI green" overstates reproducibility** (real-data tests skipped in CI) | 🟠 New — surfaced in Q2 closeout review | **Pre-Q3 gate item D:** REPRODUCE.md must split code-quality CI vs real-data repro |
 | scATAC slips into Q3 | 🟢 Acceptable | Capped to Q3 stretch; do not extend Q2 |
