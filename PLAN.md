@@ -561,12 +561,16 @@ TFs (NR4A1/2, ATF3, KLF6, MAFF) plus stromal-differentiation TFs
 - [ ] Add Streamlit pages: Conservation table, Regulator browser. Reuse
   existing patterns in `decidual_atlas/`. No new architecture.
 
-### Q3.6 — Venue decision checkpoint (month 9)
+### Q3.6 — Venue decision checkpoint ✅ **DONE (2026-05-27)**
 
-- [ ] Compare artifact strength: data resource (Scientific Data) vs
-  atlas+methods (GigaScience). Pick one.
-- [ ] Draft `docs/manuscript_outline.md` against chosen venue's
-  requirements.
+- [x] Compared Scientific Data vs GigaScience vs Genome Biology vs
+  eLife. **Chose GigaScience** — accepts atlas + reusable methods
+  + biological finding in one submission; aligns with the `wombat`
+  CLI deliverable. Full rationale in
+  `docs/manuscript_outline.md` §1.
+- [x] Drafted [`docs/manuscript_outline.md`](docs/manuscript_outline.md):
+  title, headline finding, 5+3 figure plan, methods sections,
+  reproducibility deliverables, risks, submission checklist.
 
 ### Q3 exit criteria
 
@@ -575,7 +579,8 @@ TFs (NR4A1/2, ATF3, KLF6, MAFF) plus stromal-differentiation TFs
 - [x] Score-vs-time monotonicity plot in report (mouse + human bulk).
 - [x] Two regulator lists exported. *(Q3.4: conserved + human-biased
   + mouse-biased.)*
-- [ ] Venue chosen, outline drafted.
+- [x] Venue chosen, outline drafted. *(Q3.6: GigaScience;
+  `docs/manuscript_outline.md`.)*
 
 ---
 
