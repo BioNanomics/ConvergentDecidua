@@ -24,10 +24,13 @@ comparators and carry caveats in
   reference than mouse phylogenetically, but hormone time-series data
   is sparse; flagged as exploratory.
 - **Spiny mouse** — *menstruates* and spontaneously decidualizes
-  inside the muroid clade. Now plotted (P4 + prolactin only) from
-  the Bellofiore 2018 review tabulation of Bellofiore 2017 cardiac-
-  puncture ELISA / DXI immunoassay data; E2 / LH / FSH absolute
-  values for this species are not in those tables and remain a gap.
+  inside the muroid clade. Plotted for **P4, prolactin, and E2**
+  (Bellofiore 2017 AJOG / 2018 JME Tables 2-3 plus Bellofiore 2021
+  Hum Reprod Fig 1e). **LH and FSH are not plotted and cannot be**
+  — no validated cross-reactive immunoassay exists for this species
+  and skin autotomy prevents the serial blood draws needed for
+  cycle-resolved gonadotropin tracking (McKenna 2020 PLoS ONE;
+  McKenna 2021 Sci Rep). This is a species-level technical ceiling.
 - **Bat** — intentionally absent; out-of-scope per
   [PLAN.md](../PLAN.md) locked decisions.
 
@@ -96,13 +99,32 @@ labels do not apply.
   the source (p < 0.05). The spiny mouse pattern mirrors the late-
   luteal prolactin rise seen in humans and rhesus; the mouse and
   sheep prolactin profiles in the same table do not show this rise.
+- **Estradiol** (pg/mL, Calbiotech Mouse/Rat ELISA ES180S-100,
+  cardiac puncture; Bellofiore 2021 Hum Reprod Fig 1e and Suppl
+  Table SI assay validation, n ~ 9 6-month females): cycle range
+  ~50–140 pg/mL with **peak in the proliferative phase**, nadir at
+  menses, and a **secondary elevation in the secretory phase**.
+  This is qualitatively a human-like two-peak shape, not the
+  single proestrus peak of mouse or rat. Two anchor values are
+  seeded directly from the paper's text (menses ~50, proliferative
+  peak ~140); the intermediate secretory rise is documented in
+  [sources.yaml](sources.yaml) but not seeded because the precise
+  value would require digitizing Fig 1e.
 - **Unit note:** spiny mouse prolactin is reported in **IU/L** by
   DXI immunoassay (Bellofiore 2018 Table 3 footnote *), distinct
   from the ng/mL RIA convention used for the rat trace in §3.4. Do
   not read absolute prolactin amplitudes across these two species.
-- **Not seeded:** estradiol, LH, FSH absolute values are not in the
-  Bellofiore review tables and would need primary-paper
-  supplementary data; this is recorded as a gap, not estimated.
+- **LH / FSH — not measurable in this species at present.** Two
+  Bellofiore / McKenna group papers state this explicitly: no
+  validated spiny mouse LH or FSH immunoassay exists, cross-
+  reactive antibodies from other rodents and humans have not
+  worked, and skin autotomy precludes the serial blood draws that
+  would be needed for cycle-resolved gonadotropin tracking
+  (McKenna 2020 PLoS ONE; McKenna 2021 Sci Rep). The gap is a
+  species-level technical ceiling, not a missing-paper gap, and is
+  recorded in [sources.yaml](sources.yaml) as
+  `spiny_mouse_gonadotropin_ceiling`. Closing it requires new
+  laboratory assay development, not further reading.
 
 ## 3. Cross-species comparison — normalized cycle position
 
@@ -118,9 +140,15 @@ these plots are for **phase alignment**, not amplitude comparison.
 ![Estradiol across species](plots/cycle_cross_species_estradiol.png)
 
 The pre-ovulatory E2 peak lands at roughly the same normalized
-position across all three species (~40–45 % through cycle), supporting
-phase alignment but **not** evidence of magnitude equivalence (human
-peak is 6–7× higher than rodent in absolute pg/mL).
+position (~40–45 % through cycle) across human, mouse, rat, and
+spiny mouse, supporting phase alignment but **not** evidence of
+magnitude equivalence (human peak is 6–7× higher than mouse / rat
+in absolute pg/mL; spiny mouse falls between human and rodent at
+~140 pg/mL peak). The spiny mouse is the only non-human species in
+the seed with a documented **secretory-phase E2 secondary elevation**
+(see §2.4), which the panel under-represents because only two anchor
+values are currently seeded — digitizing Bellofiore 2021 Hum Reprod
+Fig 1e would resolve that.
 
 ### 3.2 Progesterone
 
@@ -159,9 +187,13 @@ hypothesis-generating, not a tested claim.
 ![FSH across species](plots/cycle_cross_species_fsh.png)
 
 LH and FSH surges co-localize at the same normalized cycle position
-(~40–45 %) in all three species. Shape is consistent; this is the
+(~40–45 %) in human, mouse, and rat. Shape is consistent; this is the
 expected cross-species conservation and serves mainly as a sanity
-check that the normalization is sensible.
+check that the normalization is sensible. The spiny mouse is
+**deliberately absent** from these two panels — see §2.4 for the
+technical-ceiling reason (no validated assay + skin autotomy
+precludes serial sampling). Adding spiny mouse traces here would
+require new assay development.
 
 ### 3.4 Prolactin
 
@@ -227,18 +259,19 @@ classifier**, not a clinical efficacy comparison.
   concentration vs time) are Phase 6B and deliberately deferred.
 - **Primate rows are exploratory.** Do not let them carry
   quantitative claims. The spiny mouse row is plotted but seeded
-  from only two assays (P4, prolactin) and inherits the assay-family
-  and unit caveats noted in §2.4 and §3.4.
+  from only three assays (P4, prolactin, E2) with assay-family and
+  unit caveats noted in §2.4 and §3.4; LH and FSH are unseedable
+  for this species at present (see §2.4).
 
 ## 6. Suggested next iterations (none committed)
 
 In rough order of yield-per-effort:
 
-1. **Spiny mouse E2 / LH / FSH** — the Bellofiore 2018 review does
-   not tabulate absolute estradiol or gonadotropin values; a primary
-   spiny mouse endocrinology paper (or its supplement) is needed to
-   complete the per-species panel and put the species on the E2 and
-   gonadotropin cross-species panels.
+1. **Digitize Bellofiore 2021 Hum Reprod Fig 1e** to seed the full
+   spiny mouse E2 cycle curve rather than the current two anchor
+   values (menses nadir + proliferative peak). The secretory-phase
+   secondary elevation is documented in the text but not numerically
+   tabulated.
 2. **Duration-weighted rodent cycle normalization** — replace the
    stage-index normalization with stage-duration weights (estrus is
    ~12 h, diestrus ~48 h) so cross-species panels reflect biological
@@ -249,6 +282,12 @@ In rough order of yield-per-effort:
    regulatory or evolutionary questions explicitly need it; the
    endogenous-impact matrix is sufficient for atlas-context framing
    alone.
+
+**Not on the next-iteration list:** spiny mouse LH and FSH absolute
+serum values. As of 2021 these are not measurable in the species
+(no validated immunoassay; skin autotomy precludes serial blood
+draws). Closing that gap is a wet-lab methods project, not a
+literature-fetch task, and is out of scope for this workspace.
 
 None of these are commitments. Each would be a new scoped task,
 proposed against PLAN.md, not a silent expansion of the year-one

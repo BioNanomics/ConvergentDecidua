@@ -98,6 +98,57 @@ cycle_sources:
       mouse menstrual cycle does not share the proestrus/estrus/
       metestrus/diestrus axis used for mouse and rat.
 
+  - id: spiny_mouse_bellofiore_humrep_2021
+    species: spiny_mouse
+    hormones: [estradiol]
+    source_type: primary_literature
+    access_class: manual_table_extraction
+    citation: >
+      Bellofiore N, George E, Vollenhoven B, Temple-Smith P, Evans J.
+      Reproductive aging and menopause-like transition in the
+      menstruating spiny mouse (Acomys cahirinus). Human Reproduction
+      2021;36(12):3083-3094 (DOI 10.1093/humrep/deab215). Figure 1e
+      and Supplementary Table SI (assay validation).
+    url: https://doi.org/10.1093/humrep/deab215
+    accessed: 2026-05-26
+    notes: >
+      Estradiol (pg/mL, Calbiotech Mouse/Rat ELISA ES180S-100,
+      cardiac puncture, single-sample) measured in n~9 healthy
+      6-month-old females. Spike-and-recovery and linearity-of-
+      dilution validation for spiny mouse serum is in Suppl Table SI.
+      Paper states the cycle range is ~50-140 pg/mL with the peak
+      during the proliferative phase, nadir during menses, and a
+      secondary elevation during the secretory phase. Two anchor
+      values are seeded directly from text (menses ~50; proliferative
+      peak ~140); the secretory secondary elevation is documented as
+      a known feature here but is NOT seeded because the exact value
+      requires digitizing Fig 1e from the paper PDF.
+
+  - id: spiny_mouse_gonadotropin_ceiling
+    species: spiny_mouse
+    hormones: [lh, fsh]
+    source_type: methodological_note
+    access_class: reference_only
+    citation: >
+      McKenna J et al. A human-based assisted reproduction protocol
+      for the menstruating spiny mouse, Acomys cahirinus. PLoS ONE
+      2020;15(12):e0244411 (DOI 10.1371/journal.pone.0244411).
+      McKenna J et al. Postpartum ovulation and early pregnancy in
+      the menstruating spiny mouse, Acomys cahirinus. Sci Rep
+      2021;11:4577 (DOI 10.1038/s41598-021-84361-z).
+    url: https://doi.org/10.1371/journal.pone.0244411
+    accessed: 2026-05-26
+    notes: >
+      Absolute serum LH and FSH cannot be measured in spiny mouse at
+      present. Two independent statements from the Bellofiore /
+      McKenna group: (a) no specific spiny mouse LH or FSH
+      immunoassay has been validated and cross-reactive antibodies
+      from other species do not work reliably; (b) skin autotomy
+      (the spiny mouse's defining shed-skin defense) precludes the
+      repeated ear or tail vein blood draws needed for cycle-resolved
+      gonadotropin tracking. This is a species-level technical
+      ceiling, not a literature-fetch gap. No values are seeded.
+
   - id: mouse_lemur_reference
     species: gray_mouse_lemur
     hormones: []

@@ -51,13 +51,18 @@ decidualization" framing. Columns:
   trait-negative control on the spontaneous-decidualization axis, but
   endocrine data is too sparse for first-pass plotting.
 - Spiny mouse is now **plotted** as a positive control on the
-  menstruation/spontaneous-decidualization axis using the
-  Bellofiore 2018 review tabulation of Bellofiore 2017 progesterone
-  (early follicular 30-64 ng/mL; late luteal 70-199 ng/mL; ~3.1-fold
-  rise) and prolactin (four phase means in IU/L by DXI immunoassay).
-  E2, LH, and FSH absolute values for the spiny mouse are not
-  available in the reviewed tables and remain a gap; only P4 and
-  prolactin are seeded.
+  menstruation/spontaneous-decidualization axis using Bellofiore et
+  al. 2017 (AJOG) / 2018 (JME) Tables 2-3 for P4 and prolactin, plus
+  Bellofiore et al. 2021 (Human Reproduction) Fig 1e for estradiol
+  (~50 pg/mL menses nadir, ~140 pg/mL proliferative peak, secondary
+  elevation in the secretory phase). **LH and FSH absolute serum
+  values cannot be measured in this species at present** -- no
+  validated cross-reactive immunoassay exists and skin autotomy
+  prevents the serial blood draws that would be needed for cycle-
+  resolved gonadotropin tracking (McKenna 2020 PLoS ONE; McKenna
+  2021 Sci Rep). This is recorded as a species-level technical
+  ceiling in [sources.yaml](sources.yaml)
+  (`spiny_mouse_gonadotropin_ceiling`), not a missing-paper gap.
 - Bat is intentionally absent from this matrix because the project
   scope downgraded it to sequence-first; revisit if a downloadable
   bat hormone-cycle table appears.

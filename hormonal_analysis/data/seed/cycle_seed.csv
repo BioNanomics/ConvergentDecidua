@@ -73,3 +73,5 @@ spiny_mouse,spiny_mouse_bellofiore,prolactin,normalized,0.15,3.3,IU/L,,,,early f
 spiny_mouse,spiny_mouse_bellofiore,prolactin,normalized,0.40,10.0,IU/L,,,,late follicular mean (SD 7.9)
 spiny_mouse,spiny_mouse_bellofiore,prolactin,normalized,0.65,5.0,IU/L,,,,early luteal mean (SD 5.0)
 spiny_mouse,spiny_mouse_bellofiore,prolactin,normalized,0.90,11.7,IU/L,,,,late luteal mean (SD 2.6); p<0.05 vs early follicular
+spiny_mouse,spiny_mouse_bellofiore_humrep_2021,estradiol,normalized,0.05,50,pg/mL,,,9,menses nadir (lower end of ~50-140 pg/mL cycle range); Bellofiore 2021 Hum Reprod Fig 1e text
+spiny_mouse,spiny_mouse_bellofiore_humrep_2021,estradiol,normalized,0.40,140,pg/mL,,,9,proliferative-phase peak (upper end of ~50-140 pg/mL cycle range); 6-month-old females
