@@ -8,10 +8,11 @@ discussion.
 
 ## What's here
 
-- **[species_matrix.csv](species_matrix.csv)** /
-  **[species_matrix.md](species_matrix.md)** — compact matrix:
-  phylogenetic closeness, spontaneous decidualization, menstruation,
-  genome quality, hormone-data quality, downloadability, status.
+- **[species_matrix.csv](species_matrix.csv)** — compact matrix
+  (phylogenetic closeness, spontaneous decidualization, menstruation,
+  genome quality, hormone-data quality, downloadability, status).
+  Rendered version with per-species framing notes is
+  [results.md §1](results.md#1-species-matrix-at-a-glance).
 - **[sources.yaml](sources.yaml)** — every value's provenance, with an
   `access_class` of `automated_download`, `manual_table_extraction`,
   or `reference_only`.
@@ -31,7 +32,6 @@ hormonal_analysis/
   README.md
   results.md
   species_matrix.csv
-  species_matrix.md
   sources.yaml
   schema/
     cycle_long.md
