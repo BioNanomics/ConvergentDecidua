@@ -85,3 +85,20 @@
   source: GEO
   expected_format: counts
   description: In vitro decidualization time course
+
+- accession: GSE104721
+  species: human
+  tissue: endometrium
+  assay: bulk-RNA-seq
+  condition: in_vitro_decidualization
+  spontaneous_decidualization: false
+  menstruates: true
+  role: reference
+  priority: high
+  source: GEO
+  expected_format: counts
+  description: |
+    Sato 2018 (EOGT) endometrial stromal cells decidualized 4 days with
+    8-br-cAMP + MPA. Six siRNA-NT (control) samples retained: 3 donors ×
+    {Day 0, Day 4}. Custom ingest in scripts/ingest_gse104721.py because
+    the upstream xls combines counts + TPM in a single sheet.

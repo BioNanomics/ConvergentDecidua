@@ -485,15 +485,22 @@ earlier, so Q3 starts with statistically clean inputs.
 >    or wait for E-MTAB-11491 (Q3 stretch). Other five protected-
 >    core markers are unaffected.
 
-### Q3.1 — Bulk-data score validation
+### Q3.1 — Bulk-data score validation ✅ **DONE (2026-05-27)**
 
-- [ ] Score GSE226429 (mouse bulk in-vitro decidualization time course)
+- [x] Score GSE226429 (mouse bulk in-vitro decidualization time course)
   using same modules; show monotonic `decidual_score` vs. day.
-- [ ] Select one public **human** bulk decidualization series and add to
-  `configs/datasets.yaml`. Candidates: GSE4888 (Talbi 2006, in-vivo
-  cycle), GSE107844 (Lucas 2020, in-vitro), or newer if available.
-  Decide by late Q2.
-- [ ] Score human bulk; document monotonicity.
+  **Result: ρ=+1.00, p=0 (Control → Day 5).**
+- [x] Select one public **human** bulk decidualization series and add to
+  `configs/datasets.yaml`. **Selected: GSE104721 (Sato 2018, EOGT
+  endometrial stromal cells, Day 0 vs Day 4 with 8-br-cAMP+MPA, six
+  siRNA-NT samples).** PLAN.md's earlier suggestions GSE107844 (actually
+  aortic dissection) and GSE4888 (Affymetrix, not counts) were retired
+  as unsuitable.
+- [x] Score human bulk; document monotonicity.
+  **Result: ρ=+0.878, p=0.021.**
+- See: `results/reports/scoring/bulk_scoring_report.md`,
+  `src/scoring/bulk.py`, `scripts/ingest_gse104721.py`,
+  commits `dc941c9`, this commit.
 
 ### Q3.2 — Permutation null + FDR
 
@@ -532,7 +539,7 @@ earlier, so Q3 starts with statistically clean inputs.
 ### Q3 exit criteria
 
 - [ ] ≥1 conserved module at FDR < 0.05 in both species.
-- [ ] Score-vs-time monotonicity plot in report (mouse + human bulk).
+- [x] Score-vs-time monotonicity plot in report (mouse + human bulk).
 - [ ] Two regulator lists exported.
 - [ ] Venue chosen, outline drafted.
 
@@ -576,7 +583,7 @@ earlier, so Q3 starts with statistically clean inputs.
 | **Orthology layer not externally validated** (g:Profiler 0/16168 Tier 1 confirmations) | � Resolved for the protected core by `docs/ortholog_spotcheck.md` (5/6 cleared via Ensembl Compara + HGNC/MGI + functional literature; IGFBP1 ortholog OK but mouse 0 % expression caveat tracked separately) | Broader backbone validation remains a Q4-stretch item; not a year-one blocker |
 | **"CI green" overstates reproducibility** (real-data tests skipped in CI) | 🟠 New — surfaced in Q2 closeout review | **Pre-Q3 gate item D:** REPRODUCE.md must split code-quality CI vs real-data repro |
 | scATAC slips into Q3 | 🟢 Acceptable | Capped to Q3 stretch; do not extend Q2 |
-| Human bulk validation dataset not selected | 🟡 Pending | Pick by end of Q2 |
+| Human bulk validation dataset not selected | � Resolved | GSE104721 (Sato 2018) scored 2026-05-27, decidual_score ρ=+0.878 |
 | Docker build cache invalidates on R upgrade | 🟢 Low | Multi-stage build if it becomes painful |
 
 ---

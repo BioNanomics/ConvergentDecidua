@@ -36,6 +36,7 @@ atlas = [
 ingest = [
     "GEOparse>=2.0",
     "requests>=2.31",
+    "xlrd>=2.0",          # GSE104721 ships an old-format .xls
 ]
 workflow = [
     "snakemake>=8.0",
