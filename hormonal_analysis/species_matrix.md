@@ -54,8 +54,9 @@ decidualization" framing. Columns:
   menstruation/spontaneous-decidualization axis using Bellofiore et
   al. 2017 (AJOG) / 2018 (JME) Tables 2-3 for P4 and prolactin, plus
   Bellofiore et al. 2021 (Human Reproduction) Fig 1e for estradiol
-  (~50 pg/mL menses nadir, ~140 pg/mL proliferative peak, secondary
-  elevation in the secretory phase). **LH and FSH absolute serum
+  (digitized phase means: ~72 pg/mL menses, ~116 pg/mL proliferative
+  peak, ~107 pg/mL secretory secondary elevation; n=9 6-month
+  females). **LH and FSH absolute serum
   values cannot be measured in this species at present** -- no
   validated cross-reactive immunoassay exists and skin autotomy
   prevents the serial blood draws that would be needed for cycle-

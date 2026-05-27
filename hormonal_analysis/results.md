@@ -101,15 +101,15 @@ labels do not apply.
   sheep prolactin profiles in the same table do not show this rise.
 - **Estradiol** (pg/mL, Calbiotech Mouse/Rat ELISA ES180S-100,
   cardiac puncture; Bellofiore 2021 Hum Reprod Fig 1e and Suppl
-  Table SI assay validation, n ~ 9 6-month females): cycle range
-  ~50–140 pg/mL with **peak in the proliferative phase**, nadir at
-  menses, and a **secondary elevation in the secretory phase**.
-  This is qualitatively a human-like two-peak shape, not the
-  single proestrus peak of mouse or rat. Two anchor values are
-  seeded directly from the paper's text (menses ~50, proliferative
-  peak ~140); the intermediate secretory rise is documented in
-  [sources.yaml](sources.yaml) but not seeded because the precise
-  value would require digitizing Fig 1e.
+  Table SI assay validation, n = 9 6-month females). Three phase
+  means digitized by eye from Fig 1e (which colours individual
+  data points by cycle phase): **menses ~72 pg/mL** (red dots, n=2),
+  **proliferative ~116 pg/mL** (orange, n=3), **secretory ~107
+  pg/mL** (lavender, n=4). The paper's quoted ~50–140 pg/mL range
+  is the within-cohort span across individuals. This is
+  qualitatively a human-like two-peak shape (proliferative peak
+  with secretory secondary elevation), not the single proestrus
+  peak of mouse or rat.
 - **Unit note:** spiny mouse prolactin is reported in **IU/L** by
   DXI immunoassay (Bellofiore 2018 Table 3 footnote *), distinct
   from the ng/mL RIA convention used for the rat trace in §3.4. Do
@@ -144,11 +144,12 @@ position (~40–45 % through cycle) across human, mouse, rat, and
 spiny mouse, supporting phase alignment but **not** evidence of
 magnitude equivalence (human peak is 6–7× higher than mouse / rat
 in absolute pg/mL; spiny mouse falls between human and rodent at
-~140 pg/mL peak). The spiny mouse is the only non-human species in
-the seed with a documented **secretory-phase E2 secondary elevation**
-(see §2.4), which the panel under-represents because only two anchor
-values are currently seeded — digitizing Bellofiore 2021 Hum Reprod
-Fig 1e would resolve that.
+~116 pg/mL proliferative-phase mean). The spiny mouse is the only
+non-human species in the seed with a documented **secretory-phase
+E2 secondary elevation** (~107 pg/mL, lavender points in
+Bellofiore 2021 Hum Reprod Fig 1e), giving it a human-like two-peak
+shape rather than the single proestrus peak of mouse and rat (see
+§2.4).
 
 ### 3.2 Progesterone
 
@@ -267,18 +268,13 @@ classifier**, not a clinical efficacy comparison.
 
 In rough order of yield-per-effort:
 
-1. **Digitize Bellofiore 2021 Hum Reprod Fig 1e** to seed the full
-   spiny mouse E2 cycle curve rather than the current two anchor
-   values (menses nadir + proliferative peak). The secretory-phase
-   secondary elevation is documented in the text but not numerically
-   tabulated.
-2. **Duration-weighted rodent cycle normalization** — replace the
+1. **Duration-weighted rodent cycle normalization** — replace the
    stage-index normalization with stage-duration weights (estrus is
    ~12 h, diestrus ~48 h) so cross-species panels reflect biological
    time, not stage count.
-3. **Human prolactin series** to complete the cross-species prolactin
+2. **Human prolactin series** to complete the cross-species prolactin
    panel.
-4. **Contraception Phase 6B (exogenous PK curves)** — only if
+3. **Contraception Phase 6B (exogenous PK curves)** — only if
    regulatory or evolutionary questions explicitly need it; the
    endogenous-impact matrix is sufficient for atlas-context framing
    alone.

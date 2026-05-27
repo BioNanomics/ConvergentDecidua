@@ -113,16 +113,17 @@ cycle_sources:
     accessed: 2026-05-26
     notes: >
       Estradiol (pg/mL, Calbiotech Mouse/Rat ELISA ES180S-100,
-      cardiac puncture, single-sample) measured in n~9 healthy
+      cardiac puncture, single-sample) measured in n=9 healthy
       6-month-old females. Spike-and-recovery and linearity-of-
       dilution validation for spiny mouse serum is in Suppl Table SI.
       Paper states the cycle range is ~50-140 pg/mL with the peak
       during the proliferative phase, nadir during menses, and a
-      secondary elevation during the secretory phase. Two anchor
-      values are seeded directly from text (menses ~50; proliferative
-      peak ~140); the secretory secondary elevation is documented as
-      a known feature here but is NOT seeded because the exact value
-      requires digitizing Fig 1e from the paper PDF.
+      secondary elevation during the secretory phase. Three phase
+      means were digitized by eye from Fig 1e (6-month column, dots
+      coloured by cycle phase): menses ~72 (red dots ~45 + ~100,
+      n=2); proliferative ~116 (orange ~100 + ~110 + ~137, n=3);
+      secretory ~107 (lavender ~85 + ~108 + ~110 + ~125, n=4).
+      Individual-point reads are accurate to roughly +/- 5 pg/mL.
 
   - id: spiny_mouse_gonadotropin_ceiling
     species: spiny_mouse
