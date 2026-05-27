@@ -539,14 +539,22 @@ This is the manuscript headline: the canonical `decidual_score` is
 cross-species conserved while most companion modules diverge in
 cell-type-specific directions.
 
-### Q3.4 — Candidate regulator shortlists
+### Q3.4 — Candidate regulator shortlists ✅ **DONE (2026-05-27)**
 
-- [ ] New `src/cell_states/regulators.py`. Use a curated TF list
-  (AnimalTFDB or similar — pick in Q3.4 kickoff, do not invent).
-- [ ] Rank by (a) score correlation in decidual stromal cells in BOTH
-  species → **conserved** list; (b) human-only signal → **divergent**
-  list.
-- [ ] Cap each at ~25; document conservative thresholds.
+- [x] New `src/cell_states/regulators.py`. Uses Lambert 2018
+  (1,639 human TFs), shipped at
+  `configs/reference/lambert2018_human_TFs.txt` from pySCENIC.
+- [x] Rank by (a) score correlation in decidual stromal cells in BOTH
+  species → **conserved** list (`results/reports/regulators_conserved.csv`);
+  (b) species-rank gap → `regulators_human_biased.csv` /
+  `regulators_mouse_biased.csv`.
+- [x] Cap each at 25. CLI: `wombat rank-regulators [--cap N]`.
+
+**Conserved top 10 (mean rank across species):**
+MSX1, ELF3, IRX3, BHLHE40, EHF, FLI1, MECOM, ATF3, TBX3, NR4A2 —
+includes the canonical FOXO1 (rank 27) and well-known stress / IE
+TFs (NR4A1/2, ATF3, KLF6, MAFF) plus stromal-differentiation TFs
+(MSX1, MECOM, SMAD3, NFIA/B, TBX3).
 
 ### Q3.5 — Atlas pages for results
 
@@ -565,7 +573,8 @@ cell-type-specific directions.
 - [x] ≥1 conserved module at FDR < 0.05 in both species. *(Q3.2:
   decidual_score, ECM_remodeling_score, immune_interface_score.)*
 - [x] Score-vs-time monotonicity plot in report (mouse + human bulk).
-- [ ] Two regulator lists exported.
+- [x] Two regulator lists exported. *(Q3.4: conserved + human-biased
+  + mouse-biased.)*
 - [ ] Venue chosen, outline drafted.
 
 ---

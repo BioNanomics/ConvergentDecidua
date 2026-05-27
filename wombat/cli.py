@@ -611,6 +611,74 @@ def classify_conservation_cmd(fdr_threshold: float) -> None:
     console.print(f"[bold green]Conserved modules: {n_conserved}/{len(summary)}[/bold green]")
 
 
+@cli.command("rank-regulators")
+@click.option("--cap", default=25, show_default=True, type=int)
+@click.option("--tf-list", default=None, type=str, help="Path to TF symbol list.")
+def rank_regulators_cmd(cap: int, tf_list: str | None) -> None:
+    """Rank candidate decidualization regulators (Q3.4)."""
+    from pathlib import Path
+
+    import anndata as ad
+
+    from src.cell_states.regulators import (
+        RegulatorConfig,
+        load_tf_list,
+        rank_regulators,
+        split_regulators,
+    )
+
+    project_root = Path(__file__).resolve().parent.parent
+    scored_path = project_root / "results" / "scored" / "stromal_scored.h5ad"
+    if not scored_path.exists():
+        console.print(f"[red]Missing {scored_path}. Run `wombat score-decidua` first.[/red]")
+        raise SystemExit(1)
+
+    console.print(f"[blue]Loading {scored_path}...[/blue]")
+    adata = ad.read_h5ad(scored_path)
+    tfs = load_tf_list(tf_list)
+    console.print(f"[blue]Ranking {len(tfs)} candidate TFs vs decidual_score...[/blue]")
+    ranked = rank_regulators(adata, tfs, config=RegulatorConfig(cap=cap))
+    splits = split_regulators(ranked, cap=cap)
+
+    out_dir = project_root / "results" / "reports"
+    full_csv = out_dir / "regulators_full_ranking.csv"
+    ranked.to_csv(full_csv, index=False)
+    for name, df in splits.items():
+        df.to_csv(out_dir / f"regulators_{name}.csv", index=False)
+
+    md_path = out_dir / "regulators.md"
+    with open(md_path, "w") as fh:
+        fh.write("# Candidate decidualization regulators (Q3.4)\n\n")
+        fh.write(
+            "Spearman correlation between each Lambert-2018 human TF's\n"
+            "expression and ``decidual_score`` within the decidual lineage\n"
+            "(``pre_decidual_stromal`` + ``decidual_stromal`` + "
+            "``senescent_decidual``), per species. Ranking is by |rho|.\n\n"
+        )
+        for name, df in splits.items():
+            fh.write(f"## {name.replace('_', ' ').title()} (top {len(df)})\n\n")
+            cols = [
+                c
+                for c in [
+                    "tf",
+                    "human_rho",
+                    "mouse_rho",
+                    "human_rank",
+                    "mouse_rank",
+                    "mean_rank",
+                    "rank_gap",
+                ]
+                if c in df.columns
+            ]
+            fh.write(df[cols].to_markdown(index=False))
+            fh.write("\n\n")
+    console.print(f"[green]✓ {full_csv}[/green]")
+    console.print(f"[green]✓ {md_path}[/green]")
+    if not splits["conserved"].empty:
+        top = ", ".join(splits["conserved"]["tf"].head(10).tolist())
+        console.print(f"[bold green]Conserved top-{cap} (head): {top} …[/bold green]")
+
+
 # ---------------------------------------------------------------------------
 # Reports command
 # ---------------------------------------------------------------------------
