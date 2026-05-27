@@ -1,0 +1,69 @@
+species,source_id,hormone,coordinate_type,coordinate,value,unit,lower,upper,n,notes
+human,human_reed_carr,estradiol,day,1,40,pg/mL,,,,early follicular
+human,human_reed_carr,estradiol,day,5,50,pg/mL,,,,follicular
+human,human_reed_carr,estradiol,day,9,120,pg/mL,,,,late follicular rise
+human,human_reed_carr,estradiol,day,12,300,pg/mL,,,,pre-ovulatory peak
+human,human_reed_carr,estradiol,day,14,150,pg/mL,,,,ovulatory dip
+human,human_reed_carr,estradiol,day,17,150,pg/mL,,,,early luteal
+human,human_reed_carr,estradiol,day,21,180,pg/mL,,,,mid luteal secondary peak
+human,human_reed_carr,estradiol,day,25,100,pg/mL,,,,late luteal decline
+human,human_reed_carr,estradiol,day,28,40,pg/mL,,,,perimenstrual
+human,human_reed_carr,progesterone,day,1,0.4,ng/mL,,,,early follicular baseline
+human,human_reed_carr,progesterone,day,7,0.5,ng/mL,,,,follicular baseline
+human,human_reed_carr,progesterone,day,12,0.8,ng/mL,,,,pre-ovulatory
+human,human_reed_carr,progesterone,day,14,2,ng/mL,,,,early luteal rise
+human,human_reed_carr,progesterone,day,17,8,ng/mL,,,,luteal rise
+human,human_reed_carr,progesterone,day,21,12,ng/mL,,,,mid luteal peak
+human,human_reed_carr,progesterone,day,25,6,ng/mL,,,,late luteal decline
+human,human_reed_carr,progesterone,day,28,0.5,ng/mL,,,,perimenstrual
+human,human_reed_carr,lh,day,1,5,mIU/mL,,,,early follicular
+human,human_reed_carr,lh,day,7,6,mIU/mL,,,,follicular
+human,human_reed_carr,lh,day,12,15,mIU/mL,,,,rising
+human,human_reed_carr,lh,day,13,55,mIU/mL,,,,LH surge
+human,human_reed_carr,lh,day,14,40,mIU/mL,,,,post-surge
+human,human_reed_carr,lh,day,17,6,mIU/mL,,,,luteal
+human,human_reed_carr,lh,day,21,4,mIU/mL,,,,mid luteal
+human,human_reed_carr,lh,day,28,5,mIU/mL,,,,perimenstrual
+human,human_reed_carr,fsh,day,1,9,mIU/mL,,,,early follicular rise
+human,human_reed_carr,fsh,day,5,7,mIU/mL,,,,follicular
+human,human_reed_carr,fsh,day,12,8,mIU/mL,,,,pre-ovulatory
+human,human_reed_carr,fsh,day,13,18,mIU/mL,,,,FSH peak with LH surge
+human,human_reed_carr,fsh,day,14,12,mIU/mL,,,,post-surge
+human,human_reed_carr,fsh,day,21,3,mIU/mL,,,,mid luteal nadir
+human,human_reed_carr,fsh,day,28,6,mIU/mL,,,,perimenstrual rise
+mouse,mouse_estrous_canonical,estradiol,stage,proestrus,40,pg/mL,,,,peak before ovulation
+mouse,mouse_estrous_canonical,estradiol,stage,estrus,15,pg/mL,,,,post-ovulatory decline
+mouse,mouse_estrous_canonical,estradiol,stage,metestrus,8,pg/mL,,,,low
+mouse,mouse_estrous_canonical,estradiol,stage,diestrus,12,pg/mL,,,,rising
+mouse,mouse_estrous_canonical,progesterone,stage,proestrus,8,ng/mL,,,,rising
+mouse,mouse_estrous_canonical,progesterone,stage,estrus,3,ng/mL,,,,brief
+mouse,mouse_estrous_canonical,progesterone,stage,metestrus,15,ng/mL,,,,peak luteal-like
+mouse,mouse_estrous_canonical,progesterone,stage,diestrus,10,ng/mL,,,,declining
+mouse,mouse_estrous_canonical,lh,stage,proestrus,12,ng/mL,,,,surge
+mouse,mouse_estrous_canonical,lh,stage,estrus,1,ng/mL,,,,post-surge
+mouse,mouse_estrous_canonical,lh,stage,metestrus,0.5,ng/mL,,,,low
+mouse,mouse_estrous_canonical,lh,stage,diestrus,0.8,ng/mL,,,,low
+mouse,mouse_estrous_canonical,fsh,stage,proestrus,8,ng/mL,,,,surge
+mouse,mouse_estrous_canonical,fsh,stage,estrus,5,ng/mL,,,,secondary
+mouse,mouse_estrous_canonical,fsh,stage,metestrus,3,ng/mL,,,,low
+mouse,mouse_estrous_canonical,fsh,stage,diestrus,4,ng/mL,,,,rising
+rat,rat_estrous_canonical,estradiol,stage,proestrus,45,pg/mL,,,,peak
+rat,rat_estrous_canonical,estradiol,stage,estrus,15,pg/mL,,,,fall
+rat,rat_estrous_canonical,estradiol,stage,metestrus,10,pg/mL,,,,low
+rat,rat_estrous_canonical,estradiol,stage,diestrus,20,pg/mL,,,,rising
+rat,rat_estrous_canonical,progesterone,stage,proestrus,30,ng/mL,,,,peak
+rat,rat_estrous_canonical,progesterone,stage,estrus,8,ng/mL,,,,fall
+rat,rat_estrous_canonical,progesterone,stage,metestrus,25,ng/mL,,,,corpora lutea
+rat,rat_estrous_canonical,progesterone,stage,diestrus,15,ng/mL,,,,declining
+rat,rat_estrous_canonical,lh,stage,proestrus,30,ng/mL,,,,surge
+rat,rat_estrous_canonical,lh,stage,estrus,0.5,ng/mL,,,,post-surge
+rat,rat_estrous_canonical,lh,stage,metestrus,0.3,ng/mL,,,,low
+rat,rat_estrous_canonical,lh,stage,diestrus,0.4,ng/mL,,,,low
+rat,rat_estrous_canonical,fsh,stage,proestrus,15,ng/mL,,,,surge
+rat,rat_estrous_canonical,fsh,stage,estrus,8,ng/mL,,,,secondary
+rat,rat_estrous_canonical,fsh,stage,metestrus,4,ng/mL,,,,low
+rat,rat_estrous_canonical,fsh,stage,diestrus,6,ng/mL,,,,rising
+rat,rat_estrous_canonical,prolactin,stage,proestrus,80,ng/mL,,,,surge with LH
+rat,rat_estrous_canonical,prolactin,stage,estrus,20,ng/mL,,,,decline
+rat,rat_estrous_canonical,prolactin,stage,metestrus,15,ng/mL,,,,low
+rat,rat_estrous_canonical,prolactin,stage,diestrus,18,ng/mL,,,,low

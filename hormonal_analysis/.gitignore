@@ -1,0 +1,7 @@
+# Generated artifacts (kept reproducible via scripts/).
+# Plots ARE committed (via Git LFS — see ../.gitattributes) so
+# reviewers can browse figures without running the pipeline.
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep

@@ -1,0 +1,29 @@
+method,hormone,effect,effect_score,source_id,notes
+combined_oral_contraceptive,lh,strongly_suppressed,-3,fda_drug_labels,LH surge prevented; ovulation blocked
+combined_oral_contraceptive,fsh,strongly_suppressed,-3,fda_drug_labels,Follicular recruitment suppressed
+combined_oral_contraceptive,estradiol,moderately_suppressed,-2,fda_drug_labels,Endogenous E2 low; exogenous EE present
+combined_oral_contraceptive,progesterone,strongly_suppressed,-3,fda_drug_labels,No corpus luteum; endogenous P4 low; exogenous progestin present
+progestin_only_pill,lh,mildly_suppressed,-1,fda_drug_labels,Variable ovulation suppression
+progestin_only_pill,fsh,mildly_suppressed,-1,fda_drug_labels,Partial suppression
+progestin_only_pill,estradiol,unchanged,0,fda_drug_labels,Endogenous E2 largely preserved
+progestin_only_pill,progesterone,mildly_suppressed,-1,fda_drug_labels,Reduced ovulation rate lowers endogenous P4
+levonorgestrel_iud,lh,unchanged,0,fda_drug_labels,Ovulation often preserved
+levonorgestrel_iud,fsh,unchanged,0,fda_drug_labels,Preserved
+levonorgestrel_iud,estradiol,unchanged,0,fda_drug_labels,Preserved
+levonorgestrel_iud,progesterone,unchanged,0,fda_drug_labels,Ovulatory cycles often continue
+etonogestrel_implant,lh,strongly_suppressed,-3,fda_drug_labels,Ovulation reliably suppressed
+etonogestrel_implant,fsh,moderately_suppressed,-2,fda_drug_labels,Suppressed
+etonogestrel_implant,estradiol,mildly_suppressed,-1,fda_drug_labels,Reduced but not abolished
+etonogestrel_implant,progesterone,strongly_suppressed,-3,fda_drug_labels,No corpus luteum
+dmpa,lh,strongly_suppressed,-3,fda_drug_labels,Ovulation suppressed
+dmpa,fsh,strongly_suppressed,-3,fda_drug_labels,Strongly suppressed
+dmpa,estradiol,moderately_suppressed,-2,fda_drug_labels,Hypoestrogenic state common
+dmpa,progesterone,strongly_suppressed,-3,fda_drug_labels,No endogenous luteal P4
+vaginal_ring,lh,strongly_suppressed,-3,fda_drug_labels,Mechanism similar to COCs
+vaginal_ring,fsh,strongly_suppressed,-3,fda_drug_labels,Mechanism similar to COCs
+vaginal_ring,estradiol,moderately_suppressed,-2,fda_drug_labels,Endogenous E2 low; exogenous EE present
+vaginal_ring,progesterone,strongly_suppressed,-3,fda_drug_labels,No corpus luteum
+transdermal_patch,lh,strongly_suppressed,-3,fda_drug_labels,Mechanism similar to COCs
+transdermal_patch,fsh,strongly_suppressed,-3,fda_drug_labels,Mechanism similar to COCs
+transdermal_patch,estradiol,moderately_suppressed,-2,fda_drug_labels,Endogenous E2 low; exogenous EE present
+transdermal_patch,progesterone,strongly_suppressed,-3,fda_drug_labels,No corpus luteum

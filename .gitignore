@@ -36,10 +36,10 @@ coverage.xml
 !.env.example
 
 # Results (re-derived via Snakemake)
-results/
+/results/
 
 # Data downloads
-data/
+/data/
 
 # Snakemake
 .snakemake/
