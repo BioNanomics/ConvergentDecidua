@@ -137,6 +137,31 @@
     to results/processed/GSE274701__<species>.h5ad and writes a
     manifest h5ad at the main output path.
 
+- accession: GSE180637
+  species: macaque  # Macaca fascicularis (cynomolgus)
+  tissue: placenta_fetal_maternal_interface
+  assay: scRNA-seq
+  condition: pregnancy_timecourse
+  spontaneous_decidualization: true
+  menstruates: true
+  role: Q4_trait_positive_catarrhine
+  priority: high
+  source: GEO
+  expected_format: counts
+  description: |
+    Jiang et al. 2023, Dev Cell 58:806–821 (PMID 37054708, doi
+    10.1016/j.devcel.2023.03.012). "Identifying a dynamic transcriptomic
+    landscape of the cynomolgus macaque placenta during pregnancy at
+    single-cell resolution." Samples span gestation days 20–140 of a
+    162-day gestation. This is the macaque reference dataset that
+    Stadtmauer et al. 2025 (GSE274701) integrated against — confirmed
+    by reading the data-availability section of PMC12328210 on
+    2026-05-27: "macaque data were retrieved from accession number
+    GSE180637." Lets us pair baboon (GSE155170, n=3) with a deep
+    cynomolgus atlas as catarrhine trait-positive evidence for Q4.2.
+    Ingest format TBD on first fetch (likely Cell Ranger MTX or
+    Seurat RDS; will be wired through src/ingest/geo.py).
+
 - accession: GSE109309
   species: opossum  # Monodelphis domestica
   tissue: endometrial_stromal

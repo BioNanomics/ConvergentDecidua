@@ -36,17 +36,21 @@
 # --- Tier B (Q4.2 phylogenetic expansion) ---
 
 - name: macaque
-  common_name: Rhesus macaque
-  taxon_id: 9544
-  genome_build: Mmul_10
+  common_name: Cynomolgus macaque  # Macaca fascicularis — actual source of
+  # the scRNA data; Stadtmauer et al. 2025 (the GSE274701 paper) integrated
+  # cynomolgus, not rhesus, via GSE180637 (Jiang et al. 2023, Dev Cell
+  # 58:806–821, PMID 37054708). The GSE274701 deposit itself ships NO
+  # macaque h5ad; macaque is brought in from this prior published dataset.
+  taxon_id: 9541
+  genome_build: Macaca_fascicularis_6.0
   ensembl_release: 112
-  ensembl_dataset: mmulatta_gene_ensembl
-  ensembl_prefix: mmulatta
-  gene_id_prefix: ENSMMUG
+  ensembl_dataset: mfascicularis_gene_ensembl
+  ensembl_prefix: mfascicularis
+  gene_id_prefix: ENSMFAG
   menstruates: true
   spontaneous_decidualization: true
   tier: B
-  source_datasets: [GSE274701]
+  source_datasets: [GSE180637]
 
 - name: baboon
   common_name: Olive baboon

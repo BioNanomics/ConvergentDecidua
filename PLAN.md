@@ -774,15 +774,30 @@ with the data in hand (baboon trait-positive from GSE155170 against
   (GSE155170, n=3) remains the sole non-human trait-positive datum
   in current hand.
 
-- [ ] **Trace the macaque reference in Mika 2024 (GSE274701) methods.**
-  The Mika et al. 2024 paper text describes integration with prior
-  human + macaque scRNA, but the GSE274701 deposit ships only
-  guinea_pig / mouse / opossum / tenrec (confirmed by ingest
-  2026-05-27). The macaque reference dataset is published somewhere
-  — read the Mika 2024 methods, extract the accession, and add to
-  `configs/datasets.yaml` if usable. If unavailable, document and
-  rely on baboon (GSE155170, n=3) as the sole catarrhine
-  trait-positive datum for Q4.2.
+- [x] **Trace the macaque reference in the GSE274701 source paper.**
+  Resolved 2026-05-27 by reading the data-availability section of
+  the published article (Stadtmauer DJ, Basanta S, Maziarz JD, Cole
+  AG et al. 2025, *Nat Ecol Evol* 9(8):1469-1486, PMID 40596730,
+  PMCID PMC12328210, DOI 10.1038/s41559-025-02748-x — the paper
+  attribution in earlier project notes as "Mika 2024" was wrong;
+  the bioRxiv preprint is doi 10.1101/2024.05.01.591945, 2024-09).
+  Verbatim from the article: *"macaque data were retrieved from
+  accession number **GSE180637**"* — Jiang X et al. 2023,
+  *Dev. Cell* 58:806–821.e7 (PMID 37054708, doi
+  10.1016/j.devcel.2023.03.012). Cynomolgus macaque (*Macaca
+  fascicularis*) placenta scRNA across gestation days 20–140 of
+  a 162-day gestation. Added to `configs/datasets.yaml` as a
+  Q4_trait_positive_catarrhine entry and the `macaque` block in
+  `configs/species.yaml` was switched from rhesus (*M. mulatta*,
+  taxon 9544, ENSMMUG, mmulatta) to cynomolgus (*M. fascicularis*,
+  taxon 9541, ENSMFAG, mfascicularis) so the gene-ID prefix
+  matches what GSE180637 actually ships. Additional mouse refs the
+  paper integrated (for the record, not Q4.2 priorities): GSE152903,
+  GSE156125, GSE196825. Human data was pulled from
+  reproductivecellatlas.org in already-aligned form for privacy.
+  Net effect on trait-positive pool: {human, baboon, **cynomolgus
+  macaque**} — two independent catarrhines confirmed, phyllostomid
+  bat still pending.
 
 - [ ] **Phyllostomid bat sweep + author email.** GSE155170 "Bat"
   samples are *Myotis lucifugus* (vespertilionid, trait-NEGATIVE
@@ -796,8 +811,8 @@ with the data in hand (baboon trait-positive from GSE155170 against
   requirement to a documented limitation** in
   `docs/manuscript_outline.md`; the convergence test still has
   independent trait-positive lineages from {human, baboon,
-  potentially macaque} — thin without a phyllostomid, but
-  defensible if the macaque trace succeeds.
+  cynomolgus macaque (GSE180637)} — thin without a phyllostomid,
+  but defensible.
 
 ### Q4.3 — cis-regulatory layer (Lynch hypothesis)
 
