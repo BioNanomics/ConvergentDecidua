@@ -516,11 +516,28 @@ earlier, so Q3 starts with statistically clean inputs.
   **3 modules significant in both species** —
   `decidual_score`, `ECM_remodeling_score`, `immune_interface_score`.
 
-### Q3.3 — Conserved vs divergent classification
+### Q3.3 — Conserved vs divergent classification ✅ **DONE (2026-05-27)**
 
-- [ ] For each of 8 modules: classify as conserved / human-biased /
-  mouse-biased using effect size + FDR.
-- [ ] Write `results/reports/conservation_table.csv` + a markdown summary.
+- [x] For each of 8 modules: classify as conserved / human-biased /
+  mouse-biased using effect size + FDR. Implemented in
+  `src/scoring/conservation.py` (`classify_conservation`,
+  `summarise_modules`).
+- [x] Write `results/reports/conservation_table.csv` + a markdown
+  summary. CLI: `wombat classify-conservation`. Outputs:
+  `results/reports/conservation_{table.csv,table.md,summary.csv}`.
+
+**Headline result** (n_perm=100, FDR<0.05):
+
+| class | n modules | examples |
+|-------|----------:|----------|
+| conserved-up | 1 | `decidual_score` (decidual_stromal, +0.62 human / +0.76 mouse) |
+| mouse-biased | 4 | `immune_interface`, `senescence`, `ECM_remodeling`, `angiogenesis` |
+| human-biased | 2 | `estrogen_response`, `stress_response` |
+| neutral | 1 | `progesterone_response` |
+
+This is the manuscript headline: the canonical `decidual_score` is
+cross-species conserved while most companion modules diverge in
+cell-type-specific directions.
 
 ### Q3.4 — Candidate regulator shortlists
 

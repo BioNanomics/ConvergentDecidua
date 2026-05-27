@@ -562,6 +562,55 @@ def score_null(n_permutations: int, seed: int, group_key: str) -> None:
     console.print(f"[green]✓ {md_path}[/green]")
 
 
+@cli.command("classify-conservation")
+@click.option("--fdr-threshold", default=0.05, show_default=True, type=float)
+def classify_conservation_cmd(fdr_threshold: float) -> None:
+    """Classify modules as conserved / biased / divergent (Q3.3)."""
+    from pathlib import Path
+
+    import pandas as pd
+
+    from src.scoring.conservation import classify_conservation, summarise_modules
+
+    project_root = Path(__file__).resolve().parent.parent
+    fdr_csv = project_root / "results" / "reports" / "scoring" / "permutation_fdr.csv"
+    if not fdr_csv.exists():
+        console.print(f"[red]Missing {fdr_csv}. Run `wombat score-null` first.[/red]")
+        raise SystemExit(1)
+
+    fdr_table = pd.read_csv(fdr_csv)
+    detail = classify_conservation(fdr_table, fdr_threshold=fdr_threshold)
+    summary = summarise_modules(detail)
+
+    out_dir = project_root / "results" / "reports"
+    detail_csv = out_dir / "conservation_table.csv"
+    summary_csv = out_dir / "conservation_summary.csv"
+    md_path = out_dir / "conservation_table.md"
+
+    detail.to_csv(detail_csv, index=False)
+    summary.to_csv(summary_csv, index=False)
+
+    with open(md_path, "w") as fh:
+        fh.write("# Conservation table (Q3.3)\n\n")
+        fh.write(
+            f"Classes derived from `permutation_fdr.csv` at "
+            f"FDR < **{fdr_threshold}** per (module × cell group × species).\n\n"
+            "Classes: `conserved-{up,down}` (sig in all species, same sign),\n"
+            "`divergent` (sig in all species, opposite signs),\n"
+            "`{species}-biased-{up,down}`, or `neutral`.\n\n"
+        )
+        fh.write("## Module-level summary\n\n")
+        fh.write(summary.to_markdown(index=False))
+        fh.write("\n\n## Per-group detail\n\n")
+        fh.write(detail.to_markdown(index=False))
+
+    console.print(f"[green]✓ {detail_csv}[/green]")
+    console.print(f"[green]✓ {summary_csv}[/green]")
+    console.print(f"[green]✓ {md_path}[/green]")
+    n_conserved = int(summary["summary_class"].str.startswith("conserved-").sum())
+    console.print(f"[bold green]Conserved modules: {n_conserved}/{len(summary)}[/bold green]")
+
+
 # ---------------------------------------------------------------------------
 # Reports command
 # ---------------------------------------------------------------------------
