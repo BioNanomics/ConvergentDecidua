@@ -172,6 +172,104 @@ def write_per_sample_bulk(
     return manifest
 
 
+def write_per_species_h5ad(
+    raw_dir: Path,
+    dataset_meta: dict,
+    output_path: Path,
+) -> ad.AnnData:
+    """Re-index a multi-species GEO H5AD deposit as one h5ad per species.
+
+    Used for deposits like GSE274701 where each species ships as its own
+    pre-built ``.h5ad`` (e.g. ``GSE274701_Cporcellus.h5ad``). We do not
+    parse the matrix at this stage — we simply copy each file into the
+    project's canonical naming (``<acc>__<species_key>.h5ad``) and write
+    a manifest h5ad with ``.uns['per_species_h5ads']`` pointing at them.
+    Re-naming (not re-writing) keeps the original deposit pristine and
+    avoids touching 100s of MB of single-cell data unnecessarily.
+
+    ``dataset_meta['ingest']['filename_species_map']`` maps the species
+    token used in the deposit filename (the part between accession and
+    ``.h5ad``) to the species key from ``configs/species.yaml``.
+    """
+    import shutil
+
+    accession = dataset_meta["accession"]
+    ingest_cfg = dataset_meta.get("ingest") or {}
+    species_map: dict[str, str] = ingest_cfg.get("filename_species_map") or {}
+    if not species_map:
+        msg = (
+            f"{accession}: geo_per_species_h5ad requires "
+            "ingest.filename_species_map in datasets.yaml"
+        )
+        raise ValueError(msg)
+
+    deposit_files = sorted(raw_dir.glob(f"{accession}_*.h5ad"))
+    if not deposit_files:
+        msg = f"{accession}: no '{accession}_*.h5ad' deposit files found in {raw_dir}"
+        raise FileNotFoundError(msg)
+
+    per_species_h5ads: dict[str, str] = {}
+    skipped: list[str] = []
+    project_root = output_path.parent.parent.parent
+
+    for f in deposit_files:
+        # Token = part between "<accession>_" and ".h5ad"
+        token = f.stem[len(accession) + 1 :]
+        species_key = species_map.get(token) or species_map.get(token.title())
+        if species_key is None:
+            skipped.append(f.name)
+            continue
+        species_path = output_path.parent / f"{accession}__{species_key}.h5ad"
+        species_path.parent.mkdir(parents=True, exist_ok=True)
+        if not species_path.exists() or species_path.stat().st_size != f.stat().st_size:
+            shutil.copy2(f, species_path)
+        try:
+            rel = species_path.relative_to(project_root).as_posix()
+        except ValueError:
+            rel = str(species_path)
+        per_species_h5ads[species_key] = rel
+        logger.info("%s [%s]: %s → %s", accession, species_key, f.name, species_path.name)
+
+    if skipped:
+        logger.warning(
+            "%s: skipped %d h5ad files with unmapped species token (e.g. %s)",
+            accession,
+            len(skipped),
+            skipped[:3],
+        )
+
+    obs = pd.DataFrame(
+        {
+            "species": list(per_species_h5ads),
+            "h5ad_path": list(per_species_h5ads.values()),
+        },
+        index=list(per_species_h5ads),
+    )
+    manifest = ad.AnnData(
+        X=scipy.sparse.csr_matrix((len(per_species_h5ads), 0), dtype=np.float32),
+        obs=obs,
+        var=pd.DataFrame(index=pd.Index([], name="gene_id")),
+    )
+    manifest.uns["dataset"] = {
+        "accession": accession,
+        "species": dataset_meta["species"],
+        "assay": dataset_meta["assay"],
+        "tissue": dataset_meta.get("tissue", ""),
+        "condition": dataset_meta.get("condition", ""),
+    }
+    manifest.uns["per_species_h5ads"] = per_species_h5ads
+    manifest.uns["ingest_format"] = "geo_per_species_h5ad"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_h5ad(output_path)
+    logger.info(
+        "%s manifest: %d species → %s",
+        accession,
+        len(per_species_h5ads),
+        output_path,
+    )
+    return manifest
+
+
 def _samples_to_adata(
     samples: list[dict],
     *,

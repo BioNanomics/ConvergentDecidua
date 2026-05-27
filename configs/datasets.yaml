@@ -108,21 +108,34 @@
 # Acomys cahirinus endometrial transcriptomes are NOT publicly deposited.
 
 - accession: GSE274701
-  species: multi  # opossum, tenrec, guinea_pig, mouse (+ prior human/macaque integration)
+  species: multi  # opossum, tenrec, guinea_pig, mouse (deposit does NOT include macaque despite paper text)
   tissue: fetal_maternal_interface
   assay: scRNA-seq
   condition: midgestation
-  spontaneous_decidualization: mixed  # trait-positive: human, macaque, (?tenrec); trait-negative: opossum, mouse, guinea_pig
+  spontaneous_decidualization: mixed  # trait-positive: (?tenrec); trait-negative: opossum, mouse, guinea_pig
   menstruates: mixed
   role: Q4_phylogenetic_expansion
   priority: high
   source: GEO
   expected_format: h5ad
+  ingest:
+    format: geo_per_species_h5ad
+    # Deposit files: GSE274701_<SpeciesToken>.h5ad. Map each token to
+    # our species.yaml key. Verified by directory listing 2024-05.
+    filename_species_map:
+      Cporcellus: guinea_pig
+      Mdomestica: opossum
+      Mmusculus: mouse
+      Tecaudatus: tenrec
   description: |
     Mika/Wagner 2024 multi-species single-cell atlas of midgestation
     fetal-maternal interface. Primary Q4.2 substrate. Tissue is
     midgestation, not cycling endometrium — Q4.1 priming-distance
     readout does not extend; use Q3.2-style pseudobulk amplitude.
+    Deposit ships one h5ad per species (no macaque, despite paper
+    text); ingested via geo_per_species_h5ad which copies each file
+    to results/processed/GSE274701__<species>.h5ad and writes a
+    manifest h5ad at the main output path.
 
 - accession: GSE109309
   species: opossum  # Monodelphis domestica

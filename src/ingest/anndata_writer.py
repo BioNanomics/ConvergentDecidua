@@ -50,6 +50,13 @@ def to_anndata(
 
         return write_per_sample_bulk(raw_dir, dataset_meta, output_path)
 
+    # Multi-species deposit where each species already ships as its
+    # own h5ad (e.g. GSE274701). Same manifest convention.
+    if ingest_cfg.get("format") == "geo_per_species_h5ad":
+        from src.ingest.bulk_multi_species import write_per_species_h5ad
+
+        return write_per_species_h5ad(raw_dir, dataset_meta, output_path)
+
     adata = _load_from_dir(raw_dir, dataset_meta=dataset_meta)
 
     # Attach dataset metadata to .uns
