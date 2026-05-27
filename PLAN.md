@@ -584,7 +584,118 @@ TFs (NR4A1/2, ATF3, KLF6, MAFF) plus stromal-differentiation TFs
 
 ---
 
-## Q4 (months 10–12) — Manuscript, data release, submission
+## Q4 (Year 2 H1) — Convergent evolution of spontaneous decidualization
+
+**Scientific question.** Spontaneous decidualization (decidua forms each
+menstrual/oestrous cycle without an embryonic signal) evolved
+**independently** in catarrhine primates, elephant shrews, the spiny
+mouse (*Acomys cahirinus*), and some bats. Q3 established that the
+*execution machinery* (the `decidual_score` gene set + its conserved
+regulator core) is shared between human and mouse — i.e. when mouse
+stroma is triggered, it runs essentially the same program. **Q4 asks
+what changed in the lineages that acquired the spontaneous trigger.**
+
+The four leading hypotheses (testable, distinguishable):
+
+1. **Lowered activation threshold** — basal expression of PGR cofactors
+   / FOXO1 / HAND2 is higher in unstimulated spontaneous-deciduator
+   stroma, so endogenous progesterone suffices.
+2. **cis-regulatory rewiring** (Lynch/Wagner) — TE-derived enhancers
+   (MER20, MER41) recruited to decidualization genes independently in
+   each spontaneous lineage.
+3. **Loss-of-repressor** — induced-deciduators carry a brake (AHR-like,
+   miRNA, etc.) that spontaneous lineages lost.
+4. **Stromal-niche pre-priming** — uNK / vascular crosstalk in
+   spontaneous cycles provides an endogenous implantation-like signal.
+
+### Q4.1 — Baseline-priming test (uses existing atlas, no new data)
+
+- [ ] `src/scoring/baseline_priming.py`: compute `decidual_score` and
+  per-conserved-regulator score on **unstimulated stromal cells only**
+  (human secretory-phase pre-implantation stroma vs mouse pre-decidual
+  stroma in our atlas). Stratify by `cycle_stage` to control for
+  hormonal phase.
+- [ ] CLI: `wombat score-baseline`.
+- [ ] Report: `results/reports/baseline_priming.md` with effect-size
+  table + per-species score-density plot.
+- [ ] **Decision rule.** Human-resting *closer to* mouse-decidualized
+  end-state than mouse-resting is → supports hypothesis 1 (lowered
+  threshold). Both equally distant → reject hypothesis 1, focus
+  Q4.2–Q4.3 on hypotheses 2 and 4.
+
+### Q4.2 — Phylogenetic expansion (rodent-vs-rodent contrast)
+
+- [ ] Add **spiny mouse** (*Acomys cahirinus*) — closest rodent
+  natural-experiment to humans (menstruates, decidualizes
+  spontaneously). Candidate datasets: Bellofiore / Hilliard
+  endometrium-across-cycle series (GSE124753, GSE149298 — verify
+  before scoping).
+- [ ] Add **rat** (*Rattus norvegicus*) as a second induced-deciduator
+  outgroup. Candidate: GSE32916 or equivalent endometrial time course.
+- [ ] Extend `configs/species.yaml` + ortholog backbone to 4 species;
+  keep Tier 1 (1:1) discipline.
+- [ ] Re-run the Q3.2 / Q3.3 pipeline on the 4-species set. **Key
+  contrast**: `decidual_score` activation amplitude correlated with
+  the spontaneous/induced trait controlling for phylogeny (paired
+  catarrhine-vs-*Mus* and *Acomys*-vs-*Mus* contrasts; or `phylolm`
+  if a fifth species lands).
+- [ ] New: `src/scoring/trait_contrast.py`.
+
+### Q4.3 — cis-regulatory layer (Lynch hypothesis)
+
+- [ ] Ingest comparative endometrial ATAC: Mika et al. 2021
+  GSE174068 (human / rat / rabbit / possum / cow stromal cells, with
+  and without cAMP+MPA decidualization stimulus).
+- [ ] New `src/cis_regulatory/` module:
+  - `atac_qc.py` — peak calls, FRiP, blacklist filtering.
+  - `motif_enrichment.py` — JASPAR 2024 motifs for the Q3.4 conserved
+    regulator set scanned against peaks near `decidual_score` target
+    genes (±50 kb TSS).
+  - `te_overlap.py` — RepeatMasker overlap, flagging MER20 / MER41
+    derived enhancers.
+- [ ] **Decision rule.** Per-TF motif enrichment in open chromatin
+  near decidualization genes preferentially in spontaneous-deciduator
+  species → supports hypothesis 2. TE-derived element fraction higher
+  in spontaneous-deciduator open chromatin → supports the
+  Lynch/Wagner model specifically.
+
+### Q4.4 — Convergence-aware manuscript reframe
+
+- [ ] Update `docs/manuscript_outline.md`:
+  - Working title becomes *"Convergent rewiring of a conserved
+    decidualization core in spontaneously-menstruating mammals"*.
+  - Venue table revisited — with Q4.1–Q4.3 evidence, **eLife** /
+    **Genome Biology** become live again; GigaScience remains the
+    fallback Data Note venue.
+- [ ] Add a fifth main figure: **convergence-vs-conservation
+  scatter** (per regulator, trait-correlation effect-size vs
+  cross-species conservation).
+
+### Q4 stretches (do if Q4.1–Q4.3 finish early)
+
+- [ ] **dN/dS branch-site** on the conserved-regulator set across
+  mammals (PAML / HyPhy), testing positive selection on
+  spontaneous-decidualization branches. Lower expected yield because
+  the field consensus is *cis*, not coding.
+- [ ] **Gene-loss screen** — cross-reference TOGA (Hiller lab,
+  ~500 mammals) loss calls with the decidualization gene set,
+  restricted to spontaneous-decidualization branches. Hypothesis:
+  shared loss-of-repressor.
+
+### Q4 exit criteria
+
+- [ ] Each of hypotheses 1, 2 either supported, refuted, or
+  explicitly underpowered — with the evidence pinned in
+  `results/reports/`.
+- [ ] At least one spontaneous-deciduator rodent (*Acomys* preferred)
+  ingested and scored on the same pipeline as human and mouse.
+- [ ] Convergence-vs-conservation figure generated.
+- [ ] Manuscript outline updated to reflect whichever finding the
+  data supports; venue re-decided.
+
+---
+
+## Q5 (Year 2 H2) — Manuscript, data release, submission
 
 - [ ] `scripts/make_figures.py` — deterministic, seeded; writes every
   paper figure from `results/`.
@@ -598,9 +709,9 @@ TFs (NR4A1/2, ATF3, KLF6, MAFF) plus stromal-differentiation TFs
 - [ ] Manuscript drafting — methods auto-generated by
   `src/reports/methods.py`; biology + figures hand-written.
 - [ ] Preprint on bioRxiv.
-- [ ] Submission to chosen venue.
+- [ ] Submission to chosen venue (re-decided in Q4.4).
 
-### Q4 exit criteria
+### Q5 exit criteria
 
 - [ ] Preprint posted.
 - [ ] Submission acknowledged by chosen venue.
