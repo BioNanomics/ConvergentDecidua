@@ -57,6 +57,14 @@ def to_anndata(
 
         return write_per_species_h5ad(raw_dir, dataset_meta, output_path)
 
+    # Multi-species deposit where each species ships as its own
+    # tabular count file (e.g. GSE30708 ``GSE30708_<species>.txt.gz``
+    # with samples as the wide columns).
+    if ingest_cfg.get("format") == "geo_per_species_table":
+        from src.ingest.bulk_multi_species import write_per_species_table
+
+        return write_per_species_table(raw_dir, dataset_meta, output_path)
+
     adata = _load_from_dir(raw_dir, dataset_meta=dataset_meta)
 
     # Attach dataset metadata to .uns
@@ -200,6 +208,16 @@ def _load_csv_counts(path: Path) -> ad.AnnData:
     opener = gzip.open if path.name.endswith(".gz") else open
     with opener(path, "rt") as fh:
         df = pd.read_csv(fh, sep=sep, index_col=0)
+
+    # Drop non-numeric annotation columns (e.g. a leading ``gene_name``
+    # column shipped alongside the ensembl_id index in some bulk deposits
+    # such as GSE109309). Without this, df.values is object dtype and
+    # scipy.sparse rejects the cast.
+    numeric_cols = df.select_dtypes(include="number").columns
+    dropped = [c for c in df.columns if c not in numeric_cols]
+    if dropped:
+        logger.info("Dropping non-numeric annotation columns: %s", dropped)
+        df = df[numeric_cols]
 
     # Heuristic: if rows >> cols, assume genes × cells → transpose
     if df.shape[0] > df.shape[1] * 2:

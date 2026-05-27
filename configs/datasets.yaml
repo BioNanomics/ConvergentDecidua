@@ -181,9 +181,19 @@
   priority: medium
   source: GEO
   expected_format: counts
+  ingest:
+    format: geo_per_species_table
+    filename_species_map:
+      human: human
+      armadillo: armadillo
+      mdo: opossum  # Monodelphis domestica
   description: |
     Wagner lab "Transposon-mediated gene regulatory network rewiring."
-    Cross-species GRN backbone for Q4.3; 4 samples.
+    Cross-species GRN backbone for Q4.3. Per-species count tables:
+    human (4 samples: DIFF/UNDIFF Abs replicates 1-2), armadillo (n=1
+    count column), opossum/mdo (n=1, RPKM-normalized — not raw counts).
+    Thin per-species replication is descriptive only; analytical value
+    is the qualitative cross-species DE-pattern overlay.
 
 - accession: GSE155170
   species: multi  # mouse, ground_squirrel, baboon, hamster, bat (Carollia perspicillata)

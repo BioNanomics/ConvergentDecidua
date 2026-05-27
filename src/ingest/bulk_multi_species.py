@@ -335,3 +335,139 @@ def _read_two_column_counts(path: Path) -> pd.Series:
     s = pd.Series(vals.values, index=idx, dtype=np.float32)
     s = s[~s.index.duplicated(keep="first")]
     return s
+
+
+def write_per_species_table(
+    raw_dir: Path,
+    dataset_meta: dict,
+    output_path: Path,
+) -> ad.AnnData:
+    """Per-species tabular bulk deposit (e.g. GSE30708).
+
+    Each file is named ``<accession>_<species_token>.txt[.gz]`` and is a
+    wide table with a gene-id column (often plus extra annotation
+    columns such as ``Associated Gene Name`` or ``Gene Biotype``) and
+    one column per sample. Non-numeric annotation columns are dropped
+    automatically.
+
+    Writes one ``<accession>__<species>.h5ad`` per species plus a
+    small manifest h5ad at ``output_path``.
+    """
+    import shutil  # noqa: F401  (kept for symmetry with sibling helpers)
+
+    accession = dataset_meta["accession"]
+    species_map = (dataset_meta.get("ingest") or {}).get("filename_species_map", {})
+    if not species_map:
+        msg = (
+            f"{accession}: geo_per_species_table requires "
+            f"ingest.filename_species_map in datasets.yaml"
+        )
+        raise ValueError(msg)
+
+    per_species_paths: dict[str, Path] = {}
+    out_dir = output_path.parent
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    for token, species_key in species_map.items():
+        # Match GSE30708_<token>.txt[.gz]; case-insensitive token match.
+        candidates = [
+            p
+            for p in raw_dir.glob(f"{accession}_*.txt*")
+            if p.name[len(accession) + 1 :].lower().startswith(token.lower() + ".")
+        ]
+        if not candidates:
+            logger.warning("%s: no file found for species token %r", accession, token)
+            continue
+        if len(candidates) > 1:
+            logger.warning(
+                "%s: multiple files for token %r, using first: %s",
+                accession,
+                token,
+                [p.name for p in candidates],
+            )
+        src = candidates[0]
+
+        opener = gzip.open if src.name.endswith(".gz") else open
+        with opener(src, "rt") as fh:
+            df = pd.read_csv(fh, sep="\t", index_col=0)
+
+        # Drop spurious Unnamed columns from trailing tabs.
+        df = df.loc[:, ~df.columns.astype(str).str.startswith("Unnamed")]
+        # Drop non-numeric annotation columns (gene name, biotype, etc.).
+        numeric_cols = df.select_dtypes(include="number").columns
+        dropped = [c for c in df.columns if c not in numeric_cols]
+        if dropped:
+            logger.info(
+                "%s (%s): dropping non-numeric columns: %s",
+                accession,
+                species_key,
+                dropped,
+            )
+            df = df[numeric_cols]
+        # Drop duplicated gene-id rows (keep first).
+        df = df[~df.index.duplicated(keep="first")]
+
+        # samples × genes
+        mat = df.T.astype(np.float32)
+        X = scipy.sparse.csr_matrix(mat.values)
+        obs = pd.DataFrame(
+            {
+                "sample": mat.index.astype(str),
+                "species": species_key,
+                "dataset": accession,
+            },
+            index=mat.index.astype(str),
+        )
+        var = pd.DataFrame(index=df.index.astype(str))
+        var.index.name = "gene_id"
+        adata = ad.AnnData(X=X, obs=obs, var=var)
+        adata.uns["dataset"] = {
+            "accession": accession,
+            "species": species_key,
+            "assay": dataset_meta.get("assay", ""),
+            "tissue": dataset_meta.get("tissue", ""),
+            "source_file": src.name,
+        }
+        species_out = out_dir / f"{accession}__{species_key}.h5ad"
+        adata.write_h5ad(species_out)
+        per_species_paths[species_key] = species_out
+        logger.info(
+            "%s (%s): %d samples × %d genes → %s",
+            accession,
+            species_key,
+            adata.n_obs,
+            adata.n_vars,
+            species_out.name,
+        )
+
+    # Manifest h5ad: tiny pointer object indexing the per-species files.
+    if not per_species_paths:
+        msg = f"{accession}: no per-species files matched filename_species_map"
+        raise ValueError(msg)
+    manifest_obs = pd.DataFrame(
+        {
+            "species": list(per_species_paths.keys()),
+            "h5ad_path": [str(p) for p in per_species_paths.values()],
+        },
+        index=list(per_species_paths.keys()),
+    )
+    manifest = ad.AnnData(
+        X=scipy.sparse.csr_matrix((len(per_species_paths), 0), dtype=np.float32),
+        obs=manifest_obs,
+    )
+    manifest.uns["dataset"] = {
+        "accession": accession,
+        "species": dataset_meta.get("species", ""),
+        "assay": dataset_meta.get("assay", ""),
+        "tissue": dataset_meta.get("tissue", ""),
+    }
+    manifest.uns["ingest_format"] = "geo_per_species_table"
+    manifest.uns["per_species_h5ads"] = {k: str(v) for k, v in per_species_paths.items()}
+    manifest.write_h5ad(output_path)
+    logger.info(
+        "%s: wrote manifest h5ad (%d species) → %s",
+        accession,
+        len(per_species_paths),
+        output_path,
+    )
+    return manifest
