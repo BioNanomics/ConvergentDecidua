@@ -129,10 +129,14 @@ labels do not apply.
 ## 3. Cross-species comparison — normalized cycle position
 
 Cross-species plots place each species on a common 0..1 cycle-position
-axis (human: day / 28; mouse and rat: estrous stage index / 3; spiny
-mouse: explicit normalized phase positions from
+axis (human: `(day - 1) / 27`; rodents: estrous-stage midpoints
+rotated so **proestrus sits at 0.43**, aligning the rodent
+pre-ovulatory LH surge with the human day-13 surge at
+`12 / 27 = 0.444` -- stage spacing is otherwise uniform at 0.25, so
+diestrus = 0.18, proestrus = 0.43, estrus = 0.68, metestrus = 0.93;
+spiny mouse: explicit normalized phase positions from
 [cycle_seed.csv](data/seed/cycle_seed.csv)). **Units are still
-per-species** so absolute magnitudes are not directly comparable —
+per-species** so absolute magnitudes are not directly comparable --
 these plots are for **phase alignment**, not amplitude comparison.
 
 ### 3.1 Estradiol
@@ -251,10 +255,16 @@ classifier**, not a clinical efficacy comparison.
 - **Units are not silently converted across species** (gonadotropin
   units in particular differ; do not read absolute amplitudes off
   cross-species plots).
-- **Cycle position normalization is uniform-spacing on stage index for
-  rodents**, which compresses the brief estrus phase and stretches
-  the longer diestrus phase relative to wall-clock time. A
-  duration-weighted normalization is a sensible next iteration.
+- **Cycle position normalization is uniform-width on stage index for
+  rodents** (each estrous stage = 0.25 of the normalized axis), with
+  the cycle rotated so proestrus anchors at 0.43 to align the rodent
+  LH/FSH surge with the human day-13 surge. This compresses the brief
+  estrus phase and stretches the longer diestrus phase relative to
+  wall-clock time, so the **rotation aligns surges but does not align
+  phase durations**. A duration-weighted normalization (estrus
+  ~12 h, diestrus ~48 h) is a sensible next iteration; until then,
+  the rodent stage positions are anchor points, not biological
+  timepoints.
 - **The contraception matrix is endogenous-hormone-only.** Exogenous
   PK curves (ethinyl estradiol levels, levonorgestrel serum
   concentration vs time) are Phase 6B and deliberately deferred.

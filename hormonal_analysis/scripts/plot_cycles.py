@@ -25,8 +25,28 @@ HERE = Path(__file__).resolve().parent.parent
 LONG = HERE / "data" / "processed" / "cycle_long.csv"
 PLOTS = HERE / "plots"
 
-# Canonical ordering of mouse and rat estrous stages.
+# Canonical ordering of mouse and rat estrous stages (used for the
+# per-species plot, where the x-axis is by convention proestrus -> estrus
+# -> metestrus -> diestrus).
 STAGE_ORDER = ["proestrus", "estrus", "metestrus", "diestrus"]
+
+# Stage midpoints on the normalized 0..1 cycle axis, rotated so that
+# proestrus (rodent pre-ovulatory LH surge) aligns with the human
+# day-13 LH surge at position (13 - 1) / (28 - 1) = 0.444. The cycle
+# is circular, so stages are spaced at 0.25 intervals around proestrus:
+#   diestrus (early-follicular equivalent) = 0.43 - 0.25 = 0.18
+#   proestrus (pre-ovulatory)              = 0.43
+#   estrus    (ovulation / early luteal)   = 0.68
+#   metestrus (perimenstrual equivalent)   = 0.93
+# This is still an equal-width approximation. Duration-weighted
+# normalization (estrus ~12 h, diestrus ~48 h) is a separate, deeper
+# fix tracked in results.md §6.
+STAGE_NORMALIZED = {
+    "diestrus": 0.18,
+    "proestrus": 0.43,
+    "estrus": 0.68,
+    "metestrus": 0.93,
+}
 
 # Human cycle length used to normalize day -> 0..1.
 HUMAN_CYCLE_LENGTH_DAYS = 28
@@ -51,8 +71,8 @@ def _normalize_position(row: pd.Series) -> float | None:
             return None
         return max(0.0, min(1.0, (day - 1) / (HUMAN_CYCLE_LENGTH_DAYS - 1)))
     if coord_type == "stage":
-        if coord in STAGE_ORDER:
-            return STAGE_ORDER.index(coord) / (len(STAGE_ORDER) - 1)
+        if coord in STAGE_NORMALIZED:
+            return STAGE_NORMALIZED[coord]
         return None
     if coord_type == "normalized":
         try:
