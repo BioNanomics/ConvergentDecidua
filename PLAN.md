@@ -502,12 +502,19 @@ earlier, so Q3 starts with statistically clean inputs.
   `src/scoring/bulk.py`, `scripts/ingest_gse104721.py`,
   commits `dc941c9`, this commit.
 
-### Q3.2 — Permutation null + FDR
+### Q3.2 — Permutation null + FDR ✅ **DONE (2026-05-27)**
 
-- [ ] Extend `src/scoring/engine.py` with shuffled-gene-set null
-  distributions per `(cell_state, species)`.
-- [ ] Emit per-module FDR alongside raw scores.
-- [ ] Smoke test on integrated h5ad.
+- [x] Extend `src/scoring/engine.py` with shuffled-gene-set null
+  distributions per `(cell_state, species)`. Implemented in new
+  `src/scoring/null.py` (`score_with_null`, size-matched random draws
+  from `adata.var_names`, one-sided absolute-deviation test).
+- [x] Emit per-module FDR alongside raw scores. CLI: `wombat
+  score-null --n-permutations N --group-key cell_type`. Output:
+  `results/reports/scoring/permutation_fdr.{csv,md}`.
+- [x] Smoke test on integrated h5ad. 64 (module × species × cell_type)
+  tests at n_perm=100: 13 significant at FDR<0.05;
+  **3 modules significant in both species** —
+  `decidual_score`, `ECM_remodeling_score`, `immune_interface_score`.
 
 ### Q3.3 — Conserved vs divergent classification
 
@@ -538,7 +545,8 @@ earlier, so Q3 starts with statistically clean inputs.
 
 ### Q3 exit criteria
 
-- [ ] ≥1 conserved module at FDR < 0.05 in both species.
+- [x] ≥1 conserved module at FDR < 0.05 in both species. *(Q3.2:
+  decidual_score, ECM_remodeling_score, immune_interface_score.)*
 - [x] Score-vs-time monotonicity plot in report (mouse + human bulk).
 - [ ] Two regulator lists exported.
 - [ ] Venue chosen, outline drafted.

@@ -481,6 +481,87 @@ def score_bulk(accession: str | None) -> None:
         )
 
 
+@cli.command("score-null")
+@click.option("--n-permutations", default=200, show_default=True, type=int)
+@click.option("--seed", default=0, show_default=True, type=int)
+@click.option(
+    "--group-key",
+    default="cell_type",
+    show_default=True,
+    help="``.obs`` column to aggregate within (e.g. cell_type, cell_state).",
+)
+def score_null(n_permutations: int, seed: int, group_key: str) -> None:
+    """Permutation null + per-(species, cell_state) FDR (Q3.2)."""
+    from pathlib import Path
+
+    import anndata as ad
+
+    from src.scoring.gene_sets import load_score_gene_sets
+    from src.scoring.null import NullConfig, score_with_null
+
+    project_root = Path(__file__).resolve().parent.parent
+    scored_path = project_root / "results" / "scored" / "stromal_scored.h5ad"
+    if not scored_path.exists():
+        console.print(f"[red]Missing {scored_path}. Run `wombat score-decidua` first.[/red]")
+        raise SystemExit(1)
+
+    backbone_path = project_root / "results" / "orthologs" / "backbone.parquet"
+    # The integrated atlas is symbol-harmonised to human (mouse cells share
+    # the same human symbol var-namespace), so no per-species mapping is
+    # needed here. Bulk/per-dataset scoring uses the backbone elsewhere.
+    _ = backbone_path  # noqa: F841 — kept for future per-dataset (non-integrated) callers
+
+    console.print(f"[blue]Loading {scored_path}...[/blue]")
+    adata = ad.read_h5ad(scored_path)
+    gene_sets = load_score_gene_sets()
+    species_to_backbone: dict[str, str | None] = dict.fromkeys(
+        adata.obs["species"].astype(str).unique(), None
+    )
+
+    console.print(
+        f"[blue]Permutation null: {n_permutations} draws × "
+        f"{len(gene_sets)} modules × {adata.obs['species'].nunique()} species[/blue]"
+    )
+    table = score_with_null(
+        adata,
+        gene_sets,
+        species_to_backbone=species_to_backbone,
+        config=NullConfig(n_permutations=n_permutations, seed=seed, group_key=group_key),
+    )
+
+    out_dir = project_root / "results" / "reports" / "scoring"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / "permutation_fdr.csv"
+    md_path = out_dir / "permutation_fdr.md"
+    table.to_csv(csv_path, index=False)
+
+    with open(md_path, "w") as fh:
+        fh.write("# Permutation-null FDR (Q3.2)\n\n")
+        fh.write(
+            f"- n_permutations = **{n_permutations}**, seed = {seed}\n"
+            "- size-matched random gene sets drawn from "
+            "``adata.var_names`` per species\n"
+            "- one-sided absolute-deviation test, BH-corrected across all rows\n\n"
+        )
+        sig = table[table["fdr"] < 0.05]
+        fh.write(f"## Summary\n\n- rows tested: {len(table)}\n")
+        fh.write(f"- rows with FDR < 0.05: **{len(sig)}**\n")
+        conserved = (
+            sig.groupby("module")["species"]
+            .nunique()
+            .pipe(lambda s: s[s == adata.obs["species"].nunique()])
+            .index.tolist()
+        )
+        fh.write(
+            f"- modules significant in **all** species (Q3.3 conserved-pool seed): "
+            f"{conserved or '∅'}\n\n"
+        )
+        fh.write("## Full table\n\n")
+        fh.write(table.to_markdown(index=False))
+    console.print(f"[green]✓ {csv_path}[/green]")
+    console.print(f"[green]✓ {md_path}[/green]")
+
+
 # ---------------------------------------------------------------------------
 # Reports command
 # ---------------------------------------------------------------------------
