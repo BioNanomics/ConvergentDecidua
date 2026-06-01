@@ -679,19 +679,6 @@ datasets:**
   stim-response work. The macaque trait-positive datum the
   original Q4 plan called for must come from elsewhere
   (likely Lyu 2022 reanalysis or a new ask).
-- [ ] Ingest **GSE155170** (Marinic / Wagner / Kin et al., 2021) —
-  "Evolutionary transcriptomics implicates HAND2 in the origins of
-  implantation and regulation of gestation length." Bulk RNA from
-  maternal-fetal interface across **5 species**: mouse,
-  *Ictidomys tridecemlineatus* (13-lined ground squirrel),
-  *Mesocricetus auratus* (golden hamster), *Papio anubis* (olive
-  baboon — catarrhine, spontaneous), **and *Carollia perspicillata*
-  (Seba's short-tailed fruit bat — phyllostomid, menstruates with
-  decidual sloughing)**. 16 samples. Purpose-built around the
-  evolution-of-implantation question; gives the **bat** trait-
-  positive datum the original Q4 framing called for and a second
-  catarrhine trait-positive (baboon) alongside three trait-negative
-  rodents.
 - [x] Ingest **GSE109309** (Erkenbrack / Wagner 2018, "The mammalian
   decidual cell evolved from a cellular stress response") — opossum
   endometrial stromal cells, bulk RNA, 15 samples × 23,899 ENSMODG
