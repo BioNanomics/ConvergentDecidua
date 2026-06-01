@@ -903,6 +903,92 @@ comparative-regulatory datasets are ChIP-seq and bulk-RNA, not ATAC:
   deposition. Net: descriptive support for the TE-rich landscape,
   no positive gene-targeted MER20/MER41 signal from this data.
 
+### Q4.5 — TE-trigger convergence test (gain-first, synteny-anchored)
+
+**Hypothesis (user's "rare bird on a specific tree").** Spontaneous
+decidualization arose by *convergent gain* of a TE-derived *cis*-regulatory
+"trigger" element near the conserved decidual program — independently in
+catarrhines (human) and bats (*Carollia*), absent/degraded in trait-negative
+rodents (mouse, ground squirrel). Q4.3's expression-correlation ranking
+cannot supply the candidate locus (the ligand-gated master initiators PGR,
+HAND2, CEBPB, HOXA11, GATA2, SOX17 drop out at HVG selection), so Q4.5
+nominates candidates from **sequence** (scan) then drills them across species
+(drill). Pip-native only (`mappy`, `pysam`, pure-python PWM scanner).
+
+- [x] **Phase 0 — substrate.** `comparative` extra in `pyproject.toml`
+  (`pysam`, `mappy`, `pyliftover`, `pyjaspar`, `biopython`). 8 real JASPAR
+  PFMs version-pinned in `configs/decidual_motifs.jaspar` (PGR MA2327.1,
+  NR3C1 MA0113.3, FOXO1 MA0480.3, CEBPB MA0466.4, GATA2 MA0036.4, SOX17
+  MA0078.3, ESR1 MA0112.4, HOXA11 MA0911.2). Genomes fetched +faidx via
+  `scripts/fetch_genomes.sh`: human hg19, mouse mm10, ground squirrel
+  speTri2, and **Bat1K *Carollia perspicillata* mCarPer1.2
+  (GCA_056371365.1, chromosome-level)** — the menstruating species itself,
+  whose chromosome-scale contiguity largely dissolves the old assembly-gap
+  caveat.
+- [x] **Phase A — scan (`src/cis_regulatory/{motif_scan,candidates}.py`,
+  `wombat trigger-scan`).** Pure-python PWM scanner (log-odds, both strands,
+  relative score). A candidate is a human H3K27ac enhancer (GSE61793, hg19)
+  that is simultaneously TE-derived, within ±50 kb of a decidual-module
+  gene, and carries a PGR/NR3C1 motif plus ≥1 cooperating decidual factor.
+- [x] **Phase A finding — threshold calibration was decisive.** A flat
+  relative-score cutoff (0.85) nominated 43/75 peaks and made the "flagship"
+  `h3k27ac_19875` (MER41B near LAMA4) look like a 7-motif element — an
+  **artifact**: short PWMs (FOXO1/GATA2, 7 bp) clear any 0.85 cutoff in a
+  ~460 bp window by chance. Added **per-motif calibration** to a fixed
+  background false-positive rate (composition-matched shuffles;
+  `calibrate_thresholds`/`build_background`), default **FPR 0.05**. This
+  collapses the gate to **7 nominated** TE-derived candidates and restores
+  the MER41B/LAMA4 element legitimately (calibrated PGR site, ranks #1,
+  the sole MER41-family hit). Decidual biology is coherent: CDKN1A (×2),
+  IL15, PRL, DUSP1, SGK1, TIMP1, TFF1 — textbook GR/PGR targets.
+- [x] **Phase B/D — drill + verdict (`src/cis_regulatory/crossspecies.py`,
+  `wombat trigger-crossspecies`).** **Redesigned `mappy`→liftOver after a
+  sensitivity failure.** The first implementation aligned each element with
+  `mappy` (`asm20`) and scored *every* element ABSENT in all three genomes —
+  not biology but a **seed-length artifact**: minimap2's assembly presets use
+  ~19 bp minimizers, and across ~80 My a ~1.7 kb element retains no anchor
+  that long, so it returns zero hits even beside deeply-conserved genes
+  (LAMA4, CDKN1A) that are unquestionably present in mouse (self-alignment
+  scored 1.0/1.0, proving the code correct; only the short-read `sr` preset
+  recovered a 39 bp core). The drill now lifts each element through **UCSC
+  liftOver chains** (`hg19ToMm10`, `hg19ToSpeTri2` — sensitive lastz synteny)
+  for the rodents, classifying by the **fraction of the span that lifts**
+  (PRESENT ≥0.50 / DEGRADED ≥0.10 / ABSENT). To separate genuine
+  lineage-specific *loss* from a mere *assembly gap* it also lifts the
+  flanking decidual-gene TSS: element-fails-but-gene-lifts = candidate loss,
+  neither-lifts = **GAP** (uninformative). *Carollia* has no UCSC chain
+  (Bat1K assembly is new) so it keeps the *sensitive* `mappy sr` search.
+  `convergence_verdict` labels CONVERGENT (present in trait-positive
+  human+bat, lost in trait-negative rodents) vs CONSERVED / MIXED / ABSENT,
+  with GAP held apart so an assembly hole cannot manufacture a CONVERGENT
+  call. Outputs `results/reports/trigger_presence.csv` +
+  `trigger_convergence.md`. **Verdict: NULL — 0 CONVERGENT / 14 MIXED /
+  1 ABSENT of the top 15.** The result is *asymmetrically informative*:
+  the **rodent liftOver arm discriminates cleanly** (PRESENT / DEGRADED /
+  ABSENT / GAP all appear with sensible fractions) and largely *argues
+  against* convergent gain — the flagship MER41B/LAMA4 element lifts
+  PRESENT in mouse (0.50) and DEGRADED in squirrel (0.40), i.e. ancestral,
+  not rodent-lost. The **bat *Carollia* arm is underpowered**: the sensitive
+  `mappy sr` search recovers only short high-identity cores (identity
+  0.87–1.00 but coverage 0.02–0.29), so no element clears the PRESENT
+  coverage bar — the same seed-length sensitivity floor, now on the one
+  trait-positive outgroup where *no liftOver chain exists*. With the
+  trait-positive lineage un-assayable at the needed sensitivity, the
+  convergence test cannot fire and is **underpowered, not a refutation**.
+  Best convergent-shaped lead: `h3k27ac_17247` (L1M5 near **IL15**) — lost
+  in both rodents (mouse 0.00 / squirrel 0.00) with a degraded-but-real bat
+  core (identity 0.87, coverage 0.20). It is a lead to validate with a
+  *Carollia* chain / annotation, not a hit.
+- [ ] **Phase C — motif integrity (deferred).** For elements PRESENT in
+  trait-positive lineages, re-scan the orthologous locus per species to test
+  whether the PGR/cofactor motifs are intact, degraded, or gained.
+- **Honest caveats (carried into the report).** Presence-correlation ≠
+  *independent* gain (ancestral element + rodent loss yields the same
+  pattern; distinguishing it needs a *Carollia* repeat annotation);
+  small lineage n (1 trait-positive outgroup) cannot separate trait from
+  clade; rodents use liftOver while *Carollia* uses `mappy`, so a PRESENT
+  call is not perfectly comparable across the two; presence ≠ function.
+
 ### Q4.4 — Convergence-aware manuscript reframe
 
 - [ ] Update `docs/manuscript_outline.md`:

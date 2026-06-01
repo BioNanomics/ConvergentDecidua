@@ -15,10 +15,21 @@ Modules:
 
 - :mod:`src.cis_regulatory.peaks` — load BED peak calls into tidy,
   bioframe-compatible DataFrames and summarise them.
+- :mod:`src.cis_regulatory.genes` — build decidual-gene hg19 TSS windows
+  from UCSC refGene so peaks can be partitioned by gene proximity.
 - :mod:`src.cis_regulatory.te_overlap` — overlap peaks with the UCSC
   RepeatMasker hg19 annotation and quantify the TE-derived fraction,
   flagging MER20 / MER41.
 
-All heavy IO (downloading RepeatMasker, reading BEDs) is kept in thin
-loader functions so the analytic functions stay pure and testable.
+The Q4.5 "trigger element" extension nominates specific candidate loci to
+carry into a cross-species convergence test:
+
+- :mod:`src.cis_regulatory.motif_scan` — parse JASPAR PFMs and scan peak
+  sequences for decidual TF motifs with a pip-pure-python PWM scan.
+- :mod:`src.cis_regulatory.candidates` — rank TE-derived, decidual-proximal,
+  progesterone-responsive enhancers as candidate trigger elements.
+
+All heavy IO (downloading RepeatMasker, reading BEDs, FASTA extraction) is
+kept in thin loader functions so the analytic functions stay pure and
+testable.
 """

@@ -1216,6 +1216,403 @@ def cis_regulatory_cmd(window: int) -> None:
         )
 
 
+@cli.command("trigger-scan")
+@click.option(
+    "--window",
+    default=50_000,
+    show_default=True,
+    type=int,
+    help="±bp around each decidual-gene TSS to search for trigger elements.",
+)
+@click.option(
+    "--assay",
+    default="h3k27ac",
+    show_default=True,
+    help="Peak assay to scan (active enhancers by default).",
+)
+@click.option(
+    "--threshold",
+    default=0.85,
+    show_default=True,
+    type=float,
+    help="Fallback relative PWM score (0-1) when --no-calibrate is set.",
+)
+@click.option(
+    "--calibrate/--no-calibrate",
+    default=True,
+    show_default=True,
+    help="Calibrate a per-motif threshold to a fixed background false-positive "
+    "rate (fair across motif lengths). --no-calibrate uses a flat --threshold.",
+)
+@click.option(
+    "--fpr",
+    default=0.05,
+    show_default=True,
+    type=float,
+    help="Per-motif background false-positive rate for threshold calibration.",
+)
+@click.option(
+    "--min-motifs",
+    default=2,
+    show_default=True,
+    type=int,
+    help="Minimum distinct decidual motifs (incl. PGR/NR3C1) to nominate.",
+)
+def trigger_scan_cmd(
+    window: int, assay: str, threshold: float, calibrate: bool, fpr: float, min_motifs: int
+) -> None:
+    """Q4.5 Phase A — nominate candidate TE-derived decidual *trigger* elements.
+
+    Scans human H3K27ac enhancer peaks (GSE61793, hg19) for elements that
+    are simultaneously TE-derived, within ±window of a decidual-module gene,
+    and carry a PGR/NR3C1 motif plus cooperating decidual factors. This is
+    the unbiased "scan" that picks the specific candidate loci to carry into
+    the cross-species convergence drill-down — the expression-correlation
+    ranking cannot, since the master initiators drop out at HVG selection.
+
+    Requires the human hg19 genome FASTA (``results/raw/reference/hg19.fa``
+    + ``.fai``) and ``configs/decidual_motifs.jaspar``.
+    """
+    from pathlib import Path
+
+    import bioframe as bf
+
+    from src.cis_regulatory.candidates import nominate_trigger_elements
+    from src.cis_regulatory.genes import gene_windows, load_tss, matched_symbols
+    from src.cis_regulatory.motif_scan import (
+        build_background,
+        calibrate_thresholds,
+        extract_peak_seqs,
+        load_motifs,
+    )
+    from src.cis_regulatory.peaks import load_all_peaks
+    from src.cis_regulatory.te_overlap import load_rmsk
+    from wombat.config import load_config
+
+    project_root = Path(__file__).resolve().parent.parent
+    peaks_dir = project_root / "results" / "raw" / "GSE61793"
+    ref_dir = project_root / "results" / "raw" / "reference"
+    rmsk_path = ref_dir / "rmsk_hg19.txt.gz"
+    refgene_path = ref_dir / "refGene_hg19.txt.gz"
+    genome_path = ref_dir / "hg19.fa"
+    motifs_path = project_root / "configs" / "decidual_motifs.jaspar"
+
+    peaks_by_assay = load_all_peaks(peaks_dir)
+    if assay not in peaks_by_assay:
+        console.print(
+            f"[red]Assay '{assay}' not in {peaks_dir} (have: {sorted(peaks_by_assay)}).[/red]"
+        )
+        raise SystemExit(1)
+    for path in (rmsk_path, refgene_path, motifs_path):
+        if not path.exists():
+            console.print(f"[red]Missing input: {path}[/red]")
+            raise SystemExit(1)
+    if not genome_path.exists():
+        console.print(
+            f"[red]Missing human genome FASTA: {genome_path}[/red]\n"
+            "[yellow]Download hg19 (UCSC hgdownload) and index with "
+            "`samtools faidx hg19.fa` before scanning.[/yellow]"
+        )
+        raise SystemExit(1)
+
+    peaks = peaks_by_assay[assay].reset_index(drop=True)
+    peaks["name"] = [f"{assay}_{i}" for i in range(len(peaks))]
+
+    markers_cfg = load_config("markers")
+    gene_sets = markers_cfg.get("score_gene_sets") if isinstance(markers_cfg, dict) else None
+    if not gene_sets:
+        console.print("[red]No score_gene_sets in configs/markers.yaml.[/red]")
+        raise SystemExit(1)
+    genes = sorted({g for v in gene_sets.values() for g in v})
+
+    tss = load_tss(refgene_path)
+    matched = matched_symbols(tss, genes)
+    windows = gene_windows(tss, genes, window=window)
+    decidual_tss = tss[tss["symbol"].str.upper().isin(matched)]
+    console.print(
+        f"[blue]Decidual neighborhoods: {len(matched)}/{len(genes)} symbols, "
+        f"{len(windows)} merged windows (±{window:,} bp).[/blue]"
+    )
+
+    console.print("[blue]Loading RepeatMasker (hg19) and motifs...[/blue]")
+    rmsk = load_rmsk(rmsk_path)
+    motifs = load_motifs(motifs_path)
+    console.print(f"[blue]Motifs: {', '.join(m.name for m in motifs)}.[/blue]")
+
+    near_mask = bf.count_overlaps(peaks, windows[["chrom", "start", "end"]])["count"] > 0
+    near_peaks = peaks[near_mask.to_numpy()].copy()
+    console.print(
+        f"[blue]Extracting {len(near_peaks)} near-gene {assay} peak sequences "
+        "from the genome...[/blue]"
+    )
+    seqs = extract_peak_seqs(near_peaks, genome_path)
+
+    if calibrate:
+        console.print(f"[blue]Calibrating per-motif thresholds (background FPR={fpr})...[/blue]")
+        background = build_background(seqs, per_seq=3, seed=0)
+        motif_thresholds: float | dict[str, float] = calibrate_thresholds(
+            motifs, background, fpr=fpr
+        )
+        console.print(
+            "[blue]"
+            + ", ".join(f"{n}≥{t:.2f}" for n, t in sorted(motif_thresholds.items()))
+            + "[/blue]"
+        )
+    else:
+        motif_thresholds = threshold
+
+    console.print(f"[blue]Scanning {len(seqs)} peaks for trigger motifs...[/blue]")
+    candidates = nominate_trigger_elements(
+        peaks,
+        rmsk,
+        windows,
+        seqs,
+        motifs,
+        decidual_tss=decidual_tss,
+        min_motifs=min_motifs,
+        threshold=motif_thresholds,
+    )
+
+    out_dir = project_root / "results" / "reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / "trigger_candidates.csv"
+    bed_path = out_dir / "trigger_candidates.bed"
+    md_path = out_dir / "trigger_candidates.md"
+    candidates.to_csv(csv_path, index=False)
+
+    nominated = (
+        candidates[candidates["nominated"]] if "nominated" in candidates.columns else candidates
+    )
+    with open(bed_path, "w") as fh:
+        for _, r in nominated.iterrows():
+            fh.write(
+                f"{r['chrom']}\t{int(r['start'])}\t{int(r['end'])}\t"
+                f"{r['name']}\t{r.get('score', 0)}\n"
+            )
+
+    n_te_near = len(candidates)
+    n_nom = len(nominated)
+    if calibrate:
+        gate_desc = (
+            f"PGR/NR3C1 motif plus ≥{min_motifs - 1} cooperating decidual "
+            f"factor(s), each scored against a per-motif threshold calibrated "
+            f"to a {fpr:.0%} background false-positive rate (fair across motif "
+            "lengths)"
+        )
+    else:
+        gate_desc = (
+            f"PGR/NR3C1 motif plus ≥{min_motifs - 1} cooperating decidual "
+            f"factor(s) (flat relative PWM ≥ {threshold:.2f})"
+        )
+    with open(md_path, "w") as fh:
+        fh.write("# Candidate decidual trigger elements (Q4.5 Phase A)\n\n")
+        fh.write(
+            "Unbiased *sequence* scan to nominate the specific TE-derived "
+            f"*cis*-regulatory loci to carry into the cross-species convergence "
+            f"test. A candidate is a `{assay}` enhancer that is TE-derived, "
+            f"within ±{window:,} bp of a decidual-module gene, and carries a "
+            f"{gate_desc}.\n\n"
+        )
+        fh.write("## Funnel\n\n")
+        fh.write(f"- TE-derived near-gene `{assay}` peaks: **{n_te_near}**\n")
+        fh.write(f"- Nominated trigger candidates (pass the gate): **{n_nom}**\n\n")
+        if n_nom:
+            top = nominated.head(20)
+            fh.write("## Top candidates\n\n")
+            fh.write(top.to_markdown(index=False))
+            fh.write("\n")
+        else:
+            fh.write(
+                "No peak passes the PGR-motif + multi-factor gate. The element "
+                "may sit below the PWM threshold, or the trigger may not be "
+                "recoverable from this human-only enhancer map.\n"
+            )
+        fh.write("\n")
+
+    console.print(f"[green]✓ {csv_path}[/green]")
+    console.print(f"[green]✓ {bed_path}[/green]")
+    console.print(f"[green]✓ {md_path}[/green]")
+    console.print(
+        f"[green]{n_nom} trigger candidate(s) nominated from {n_te_near} "
+        f"TE-derived near-gene {assay} peaks.[/green]"
+    )
+
+
+@cli.command("trigger-crossspecies")
+@click.option(
+    "--top",
+    default=15,
+    show_default=True,
+    type=int,
+    help="Drill the top-N TE-derived candidates (by trigger-scan rank).",
+)
+@click.option(
+    "--carollia-preset",
+    default="sr",
+    show_default=True,
+    help="Sensitive mappy preset for the chain-less Carollia search.",
+)
+def trigger_crossspecies_cmd(top: int, carollia_preset: str) -> None:
+    """Q4.5 Phase B/D — cross-species convergence test of trigger candidates.
+
+    Takes the top-N human candidates from ``trigger-scan`` and asks, per
+    species, whether each element is conserved. Mouse and ground squirrel use
+    **UCSC liftOver chains** (sensitive lastz-derived synteny, the standard
+    way to locate a human region in another genome — unlike a fast minimizer
+    aligner, which cannot seed a diverged ~kb regulatory element). *Carollia*
+    has no chain (new Bat1K assembly) so it falls back to a sensitive
+    ``mappy`` search. Each element is called PRESENT / DEGRADED / ABSENT /
+    GAP, then a convergence verdict is issued: a CONVERGENT element is
+    PRESENT in the spontaneously-decidualizing lineages (human + bat) yet
+    lost in the trait-negative rodents — presence tracking the trait, not
+    the tree. GAP (assembly/synteny gap, gene also fails to lift) is held
+    apart from informative loss.
+
+    Requires ``results/reports/trigger_candidates.csv`` (run ``trigger-scan``
+    first), the hg19 FASTA, the two UCSC chains under
+    ``results/raw/chains/`` (``hg19ToMm10`` / ``hg19ToSpeTri2``), and the
+    *Carollia* genome under ``results/raw/genomes/``.
+    """
+    from pathlib import Path
+
+    import pandas as pd
+
+    from src.cis_regulatory.crossspecies import (
+        TRAIT_NEGATIVE,
+        TRAIT_POSITIVE,
+        convergence_verdict,
+        crossspecies_presence,
+    )
+    from src.cis_regulatory.genes import load_tss, matched_symbols
+    from src.cis_regulatory.motif_scan import extract_peak_seqs
+    from wombat.config import load_config
+
+    project_root = Path(__file__).resolve().parent.parent
+    ref_dir = project_root / "results" / "raw" / "reference"
+    genomes_dir = project_root / "results" / "raw" / "genomes"
+    chains_dir = project_root / "results" / "raw" / "chains"
+    candidates_csv = project_root / "results" / "reports" / "trigger_candidates.csv"
+    hg19 = ref_dir / "hg19.fa"
+    carollia_fa = genomes_dir / "bat_carollia.fa"
+
+    if not candidates_csv.exists():
+        console.print(
+            f"[red]Missing {candidates_csv}[/red]\n"
+            "[yellow]Run `wombat trigger-scan` first.[/yellow]"
+        )
+        raise SystemExit(1)
+    if not hg19.exists():
+        console.print(f"[red]Missing human genome FASTA: {hg19}[/red]")
+        raise SystemExit(1)
+
+    chains = {
+        "mouse": chains_dir / "hg19ToMm10.over.chain.gz",
+        "ground_squirrel": chains_dir / "hg19ToSpeTri2.over.chain.gz",
+    }
+    missing = [str(p) for p in (*chains.values(), carollia_fa) if not p.exists()]
+    if missing:
+        console.print(
+            "[red]Missing chain / genome input(s):[/red] " + ", ".join(missing) + "\n"
+            "[yellow]Download UCSC chains (hg19ToMm10, hg19ToSpeTri2) into "
+            "results/raw/chains/ and run scripts/fetch_genomes.sh.[/yellow]"
+        )
+        raise SystemExit(1)
+
+    candidates = pd.read_csv(candidates_csv)
+    te_derived = candidates[candidates["te_name"].notna()].head(top).copy()
+    console.print(
+        f"[blue]Drilling top {len(te_derived)} TE-derived candidates "
+        f"({int(te_derived['nominated'].sum())} nominated): mouse + "
+        "ground-squirrel via liftOver, Carollia via sensitive mappy...[/blue]"
+    )
+
+    # Flanking decidual-gene TSS, to separate true loss from assembly gaps.
+    markers_cfg = load_config("markers")
+    gene_sets = markers_cfg.get("score_gene_sets") if isinstance(markers_cfg, dict) else None
+    genes = sorted({g for v in (gene_sets or {}).values() for g in v})
+    refgene = ref_dir / "refGene_hg19.txt.gz"
+    gene_tss = None
+    if refgene.exists() and genes:
+        tss = load_tss(refgene)
+        matched = matched_symbols(tss, genes)
+        gene_tss = tss[tss["symbol"].str.upper().isin(matched)][["symbol", "chrom", "tss"]]
+
+    carollia_seqs = extract_peak_seqs(te_derived, hg19)
+    console.print(
+        "[blue]Loading liftOver chains and building the Carollia index "
+        "(first run is slow)...[/blue]"
+    )
+    presence = crossspecies_presence(
+        te_derived,
+        chains,
+        carollia_seqs=carollia_seqs,
+        carollia_genome=carollia_fa,
+        carollia_preset=carollia_preset,
+        gene_tss=gene_tss,
+    )
+    verdict = convergence_verdict(presence)
+
+    out_dir = project_root / "results" / "reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    presence_csv = out_dir / "trigger_presence.csv"
+    convergence_md = out_dir / "trigger_convergence.md"
+    verdict.to_csv(presence_csv, index=False)
+
+    counts = verdict["verdict"].value_counts().to_dict()
+    n_conv = counts.get("CONVERGENT", 0)
+    species = list(TRAIT_POSITIVE) + list(TRAIT_NEGATIVE)
+    with open(convergence_md, "w") as fh:
+        fh.write("# Cross-species convergence test of trigger elements (Q4.5 Phase B/D)\n\n")
+        fh.write(
+            "Each top human candidate element was tested for conservation in "
+            "the target genomes — mouse and ground squirrel via **UCSC "
+            "liftOver chains** (sensitive lastz synteny), *Carollia* via a "
+            f"sensitive `mappy` search (preset `{carollia_preset}`, no chain "
+            "exists for the new Bat1K assembly). Calls: PRESENT / DEGRADED / "
+            "ABSENT, plus **GAP** when neither the element nor its flanking "
+            "gene resolves in that assembly (uninformative, not loss). A "
+            "**CONVERGENT** verdict means the element is PRESENT in the "
+            "spontaneously-decidualizing lineages "
+            f"({', '.join(TRAIT_POSITIVE)}) yet lost in the trait-negative "
+            f"rodents ({', '.join(TRAIT_NEGATIVE)}) — presence tracking the "
+            "trait rather than the phylogeny.\n\n"
+        )
+        fh.write("## Verdict tally\n\n")
+        for label in ("CONVERGENT", "CONSERVED", "MIXED", "ABSENT"):
+            if label in counts:
+                fh.write(f"- **{label}**: {counts[label]}\n")
+        fh.write("\n## Per-element calls\n\n")
+        show_cols = ["name", "nearest_gene", "te_name", "te_flagged", "nominated", "verdict"]
+        show_cols += [f"{sp}_class" for sp in species]
+        show_cols = [c for c in show_cols if c in verdict.columns]
+        fh.write(verdict[show_cols].to_markdown(index=False))
+        fh.write("\n\n## Caveats\n\n")
+        fh.write(
+            "- **Presence-correlation is not independent gain.** A CONVERGENT "
+            "pattern is also produced by an ancestral element lost in both "
+            "rodent lineages. Distinguishing *convergent insertion* from "
+            "*shared-ancestry-then-loss* needs the local TE identity at the "
+            "bat locus, which requires a *Carollia* repeat annotation not yet "
+            "in hand.\n"
+            "- **Small lineage n.** One trait-positive outgroup (bat) and two "
+            "trait-negative outgroups cannot separate trait from clade; this "
+            "is a nomination, not a phylogenetically-controlled test.\n"
+            "- **Asymmetric methods.** Rodents use liftOver while Carollia "
+            "uses mappy; a PRESENT call is not perfectly comparable across "
+            "the two, so a CONVERGENT verdict is a lead to validate, not a "
+            "proof.\n"
+            "- **Presence \u2260 function.** Conserved sequence need not be a "
+            "conserved enhancer; motif integrity across species (Phase C) is "
+            "the next discriminator.\n"
+        )
+
+    console.print(f"[green]✓ {presence_csv}[/green]")
+    console.print(f"[green]✓ {convergence_md}[/green]")
+    console.print(
+        f"[green]{n_conv} CONVERGENT-pattern element(s) of {len(verdict)} drilled.[/green]"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Reports command
 # ---------------------------------------------------------------------------

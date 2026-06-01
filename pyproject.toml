@@ -42,8 +42,19 @@ ingest = [
 workflow = [
     "snakemake>=8.0",
 ]
+comparative = [
+    # Q4.5 cross-species cis-regulatory trigger test. Pip-native only (no
+    # conda binaries): genome FASTA I/O, read mapping, coordinate lift and
+    # motif sourcing. Imported lazily by the `trigger-*` CLI commands so the
+    # core install stays light.
+    "pysam>=0.22",       # indexed FASTA region extraction
+    "mappy>=2.26",       # minimap2 bindings for cross-species element search
+    "pyliftover>=0.4",   # hg19<->hg38 coordinate lift
+    "pyjaspar>=3.0",     # refresh JASPAR motif matrices (configs/decidual_motifs.jaspar)
+    "biopython>=1.83",   # sequence records / pairwise alignment
+]
 all = [
-    "convergent-decidua[dev,atlas,ingest,workflow]",
+    "convergent-decidua[dev,atlas,ingest,workflow,comparative]",
 ]
 
 [project.scripts]
