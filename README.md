@@ -4,6 +4,8 @@ A reproducible comparative atlas for the evolution of decidualization.
 
 ## Background
 
+Decidualization may have originated as a maternal wound-healing and immune-regulatory response to trophoblast invasion, and embryos subsequently evolved to exploit and shape that response. The modern decidua is therefore a derived organ built from ancient tissue-repair circuitry, analogous in some respects to how parasites induce host structures such as insect galls.
+
 The repeated emergence of menstruation-associated spontaneous decidualization in distantly related mammals suggests a striking case of convergent evolution in reproductive timing. In humans and other menstruating species, endometrial stromal cells acquire a decidual phenotype as part of the reproductive cycle itself, before embryo implantation is confirmed. This differs from the condition in most mammals, where decidualization is induced locally by implantation or embryo-derived cues.
 
 This shift altered the temporal relationship between maternal tissues and embryonic invasion. Rather than responding only after implantation begins, the uterus in spontaneously decidualizing species enters a hormonally regulated anticipatory stromal state. In many menstruating mammals, that cyclic preconditioning is associated with progesterone-dependent stromal differentiation, endometrial breakdown and repair, immune remodeling, and, in several lineages, invasive implantation. These traits are related but not interchangeable, and their evolutionary relationships remain part of the question.
