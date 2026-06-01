@@ -1059,6 +1059,163 @@ def trait_contrast_cmd(min_module_genes: int, min_samples_per_arm: int) -> None:
         console.print("[yellow]No module passed FDR<0.05 in the spontaneous direction.[/yellow]")
 
 
+@cli.command("cis-regulatory")
+@click.option(
+    "--window",
+    default=50_000,
+    show_default=True,
+    type=int,
+    help="±bp around each decidual-gene TSS for the proximity test.",
+)
+def cis_regulatory_cmd(window: int) -> None:
+    """Cis-regulatory TE overlap (Q4.3): test the Lynch/Wagner hypothesis
+    that the human decidual enhancer landscape is transposable-element
+    derived, using processed GSE61793 ChIP/DNase peaks (hg19) and UCSC
+    RepeatMasker.
+
+    Two readouts: (1) a genome-wide TE census of all peaks per assay, and
+    (2) a decidual-gene proximity test asking whether the flagged ancient
+    families (MER20/MER41) are enriched in enhancers near the decidual
+    module genes. CAVEAT: GSE61793 is human-only ChIP, so this is a
+    descriptive landscape test, not a cross-species trait contrast.
+    """
+    from pathlib import Path
+
+    import pandas as pd
+
+    from src.cis_regulatory.genes import gene_windows, load_tss, matched_symbols
+    from src.cis_regulatory.peaks import load_all_peaks, peak_qc
+    from src.cis_regulatory.te_overlap import (
+        load_rmsk,
+        near_gene_te_enrichment,
+        te_enrichment_all,
+    )
+    from wombat.config import load_config
+
+    project_root = Path(__file__).resolve().parent.parent
+    peaks_dir = project_root / "results" / "raw" / "GSE61793"
+    ref_dir = project_root / "results" / "raw" / "reference"
+    rmsk_path = ref_dir / "rmsk_hg19.txt.gz"
+    refgene_path = ref_dir / "refGene_hg19.txt.gz"
+
+    peaks = load_all_peaks(peaks_dir)
+    if not peaks:
+        console.print(f"[red]No GSE61793 peak BEDs in {peaks_dir}.[/red]")
+        raise SystemExit(1)
+    for path in (rmsk_path, refgene_path):
+        if not path.exists():
+            console.print(f"[red]Missing reference: {path}[/red]")
+            raise SystemExit(1)
+
+    qc = pd.DataFrame(peak_qc(df, assay) for assay, df in peaks.items())
+
+    console.print("[blue]Loading RepeatMasker (hg19)...[/blue]")
+    rmsk = load_rmsk(rmsk_path)
+    console.print("[blue]Computing genome-wide TE census...[/blue]")
+    census = te_enrichment_all(peaks, rmsk)
+
+    markers_cfg = load_config("markers")
+    gene_sets = markers_cfg.get("score_gene_sets") if isinstance(markers_cfg, dict) else None
+    if not gene_sets:
+        console.print("[red]No score_gene_sets in configs/markers.yaml.[/red]")
+        raise SystemExit(1)
+    genes = sorted({g for v in gene_sets.values() for g in v})
+
+    tss = load_tss(refgene_path)
+    matched = matched_symbols(tss, genes)
+    windows = gene_windows(tss, genes, window=window)
+    console.print(
+        f"[blue]Decidual-gene proximity: {len(matched)}/{len(genes)} symbols, "
+        f"{len(windows)} merged windows (±{window:,} bp).[/blue]"
+    )
+    proximity = pd.concat(
+        [near_gene_te_enrichment(df, rmsk, windows, assay) for assay, df in peaks.items()],
+        ignore_index=True,
+    )
+
+    out_dir = project_root / "results" / "reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    qc_csv = out_dir / "cis_regulatory_peak_qc.csv"
+    census_csv = out_dir / "cis_regulatory_te_census.csv"
+    proximity_csv = out_dir / "cis_regulatory_proximity.csv"
+    md_path = out_dir / "cis_regulatory.md"
+    qc.to_csv(qc_csv, index=False)
+    census.to_csv(census_csv, index=False)
+    proximity.to_csv(proximity_csv, index=False)
+
+    sig = proximity[proximity["fisher_p_greater"] < 0.05]
+    with open(md_path, "w") as fh:
+        fh.write("# Cis-regulatory TE overlap (Q4.3)\n\n")
+        fh.write(
+            "Is the human decidual *cis*-regulatory landscape disproportionately\n"
+            "**transposable-element derived**, as the Lynch/Wagner model of\n"
+            "co-opted endometrial regulation predicts? We overlap processed\n"
+            "GSE61793 peaks (hg19; H3K27ac active enhancers, H3K4me3 promoters,\n"
+            "DNaseI open chromatin) with UCSC RepeatMasker and flag the ancient\n"
+            "families MER20 and MER41 implicated in that model.\n\n"
+        )
+        fh.write(
+            "> **Scope caveat.** GSE61793 is human-only ChIP, so this is a\n"
+            "> descriptive landscape test, **not** a cross-species trait contrast.\n"
+            "> The spontaneous-vs-induced comparison the hypothesis ultimately\n"
+            "> needs is not answerable from a single species' regulatory maps.\n\n"
+        )
+        fh.write("## Peak sets\n\n")
+        fh.write(qc.to_markdown(index=False, floatfmt=".0f"))
+        fh.write("\n\n## Genome-wide TE census\n\n")
+        fh.write(
+            "Fraction of peaks (per assay) overlapping each RepeatMasker\n"
+            "category. SVA retroposons are filed under class `Other` in hg19.\n\n"
+        )
+        fh.write(census.to_markdown(index=False, floatfmt=".4f"))
+        fh.write("\n\n## Decidual-gene proximity test (the Lynch prediction)\n\n")
+        fh.write(
+            f"Among peaks within ±{window:,} bp of a decidual module gene TSS\n"
+            f"({len(matched)}/{len(genes)} symbols, {len(windows)} merged windows),\n"
+            "is a flagged family enriched vs peaks elsewhere? One-sided Fisher's\n"
+            'exact test (`alternative="greater"`).\n\n'
+        )
+        fh.write(proximity.to_markdown(index=False, floatfmt=".4f"))
+        fh.write("\n\n## Verdict\n\n")
+        if len(sig):
+            fh.write(
+                "Flagged TE families **enriched** in decidual-gene peaks (Fisher p<0.05):\n\n"
+            )
+            for _, r in sig.iterrows():
+                fh.write(
+                    f"- {r['assay']} / {r['family']}: "
+                    f"{r['near_hit']}/{r['n_near']} near vs "
+                    f"{r['far_hit']}/{r['n_far']} far "
+                    f"(OR={r['odds_ratio']:.2f}, p={r['fisher_p_greater']:.3g})\n"
+                )
+        else:
+            fh.write(
+                "No flagged family (MER20/MER41) is significantly enriched in\n"
+                "decidual-gene peaks at p<0.05. With the project's compact\n"
+                "decidual panel the proximity test is **underpowered** (few\n"
+                "near-gene peaks vs a <1% family base rate); the genome-wide\n"
+                "census still shows the bulk of enhancers are TE-derived, but\n"
+                "the gene-specific Lynch signal is not recovered from this\n"
+                "human-only ChIP.\n"
+            )
+        fh.write("\n")
+
+    console.print(f"[green]✓ {qc_csv}[/green]")
+    console.print(f"[green]✓ {census_csv}[/green]")
+    console.print(f"[green]✓ {proximity_csv}[/green]")
+    console.print(f"[green]✓ {md_path}[/green]")
+    if len(sig):
+        console.print(
+            f"[green]{len(sig)} flagged family enrichment(s) in decidual-gene peaks "
+            "(Fisher p<0.05).[/green]"
+        )
+    else:
+        console.print(
+            "[yellow]No MER20/MER41 enrichment in decidual-gene peaks "
+            "(underpowered panel).[/yellow]"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Reports command
 # ---------------------------------------------------------------------------

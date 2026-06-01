@@ -859,10 +859,14 @@ anti-tumor). No "Mika 2021 comparative endometrial ATAC" deposition
 exists under that description. The actual usable Lynch / Wagner
 comparative-regulatory datasets are ChIP-seq and bulk-RNA, not ATAC:
 
-- [ ] Ingest **GSE61793** (Lynch lab, "Ancient transposable elements
+- [x] Ingest **GSE61793** (Lynch lab, "Ancient transposable elements
   transformed the uterine regulatory landscape") — human ChIP-seq /
-  TE-derived regulatory landscape; 13 samples; directly probes the
-  MER20 / MER41 cis-rewiring hypothesis.
+  TE-derived regulatory landscape. Done 2025-Q4: pulled the three
+  series-level **processed peak BEDs** (hg19; H3K27ac 24,329 active
+  enhancers, H3K4me3 22,440 promoters, DNaseI 137,107 open-chromatin)
+  into `results/raw/GSE61793/`; skipped the two ~600 MB WIG signal
+  tracks (not needed for overlap). No peak-calling required — directly
+  probes the MER20 / MER41 cis-rewiring hypothesis.
 - [x] Ingest **GSE30708** (Wagner lab, "Transposon-mediated gene
   regulatory network rewiring") — per-species TSV deposit
   (commit 64171f8) ingested via new `geo_per_species_table` ingest
@@ -871,24 +875,33 @@ comparative-regulatory datasets are ChIP-seq and bulk-RNA, not ATAC:
   Reads cols). Thin per-species replication limits this dataset to
   qualitative cross-species DE-pattern overlay rather than per-
   species statistics.
-- [ ] New `src/cis_regulatory/` module (renamed scope: ChIP-seq +
-  TE-overlap, not ATAC):
-  - `chip_qc.py` — peak calls, FRiP, blacklist filtering for the
-    GSE61793 ChIP tracks.
-  - `motif_enrichment.py` — JASPAR 2024 motifs for the Q3.4 conserved
-    regulator set scanned against peaks near `decidual_score` target
-    genes (±50 kb TSS).
-  - `te_overlap.py` — RepeatMasker overlap, flagging MER20 / MER41
-    derived enhancers (the primary Lynch/Wagner-model test).
-- [ ] **Decision rule.** Per-TF motif enrichment near
-  decidualization genes preferentially in spontaneous-deciduator
-  species → supports hypothesis 2. TE-derived element fraction
-  elevated in spontaneous-deciduator regulatory peaks → supports the
-  Lynch/Wagner model specifically. (Note: with only human ChIP in
-  GSE61793, the cross-species test relies on GSE30708 bulk RNA
-  divergence near TE-flagged loci; a true cross-species open-
-  chromatin test would require a generating experiment or a future
-  comparative-ATAC deposition.)
+- [x] New `src/cis_regulatory/` module (scope: processed-peak +
+  TE-overlap, not ATAC, not peak-calling):
+  - `peaks.py` — load + QC the GSE61793 BED5 peaks (canonical chroms,
+    bioframe sort, width).
+  - `genes.py` — UCSC refGene (hg19) → decidual-gene TSS windows
+    (±50 kb, merged) for the proximity test.
+  - `te_overlap.py` — RepeatMasker (hg19) overlap via bioframe; a
+    genome-wide TE census plus a `near_gene_te_enrichment` Fisher test
+    flagging MER20 / MER41 derived enhancers (the primary
+    Lynch/Wagner-model test). SVA retroposons live under class
+    `Other` in hg19.
+  - `motif_enrichment.py` — **deferred** (needs JASPAR + genome FASTA);
+    the TE-overlap readout already tests the core Lynch prediction.
+  - CLI `wombat cis-regulatory` writes `results/reports/cis_regulatory.md`
+    + 3 CSVs; tests in `tests/test_cis_regulatory.py`.
+- [x] **Decision rule / finding (2025-Q4).** Genome-wide census:
+  ~75 % of H3K27ac decidual enhancers (and ~85 % of promoters) overlap
+  a TE — the human decidual regulatory landscape **is** TE-rich,
+  consistent with Lynch's landscape claim. But the gene-specific
+  prediction is **not** recovered: MER20 0/95 and MER41 1/95 near the
+  56-gene decidual panel (Fisher p≥0.22, NS) — the proximity test is
+  **underpowered** at this panel size (few near-gene peaks vs <1 %
+  family base rate). With only human ChIP in GSE61793 the cross-species
+  contrast is not answerable here; it would rely on GSE30708 bulk RNA
+  divergence near TE-flagged loci, or a future comparative-ATAC
+  deposition. Net: descriptive support for the TE-rich landscape,
+  no positive gene-targeted MER20/MER41 signal from this data.
 
 ### Q4.4 — Convergence-aware manuscript reframe
 

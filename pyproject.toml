@@ -21,6 +21,7 @@ dependencies = [
     "requests>=2.31",
     "pandas>=2.0",
     "tabulate>=0.9",
+    "bioframe>=0.7",
 ]
 
 [project.optional-dependencies]
