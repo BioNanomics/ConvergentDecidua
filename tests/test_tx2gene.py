@@ -71,7 +71,7 @@ def test_strip_version():
 def test_fetch_chunk_with_retry_recovers(monkeypatch):
     calls = {"n": 0}
 
-    def flaky_then_ok(_xml, _label):
+    def flaky_then_ok(_xml, _label, mirrors=t2g._BIOMART_MIRRORS):
         calls["n"] += 1
         if calls["n"] < 3:
             raise RuntimeError("all mirrors failed")
@@ -88,7 +88,7 @@ def test_fetch_chunk_with_retry_recovers(monkeypatch):
 
 
 def test_fetch_chunk_with_retry_gives_up(monkeypatch):
-    def always_fail(_xml, _label):
+    def always_fail(_xml, _label, mirrors=t2g._BIOMART_MIRRORS):
         raise RuntimeError("all mirrors failed")
 
     monkeypatch.setattr(t2g, "_fetch_biomart_tsv", always_fail)
@@ -114,7 +114,7 @@ def test_fetch_tx2gene_chunked_concatenates_and_dedups(monkeypatch):
         ),
     }
 
-    def fake_fetch(_xml, label):
+    def fake_fetch(_xml, label, mirrors=t2g._BIOMART_MIRRORS):
         chrom = label.split(":", 1)[1]
         return bodies[chrom], []
 
@@ -127,6 +127,48 @@ def test_fetch_tx2gene_chunked_concatenates_and_dedups(monkeypatch):
     # 3 unique transcripts after de-dup (ENSMUST1 appeared twice).
     assert sorted(df["transcript_id"]) == ["ENSMUST1", "ENSMUST2", "ENSMUST3"]
     assert df["transcript_id"].nunique() == len(df)
+
+
+def test_fetch_tx2gene_pins_archive_host(monkeypatch, tmp_path):
+    # An explicit biomart_host pins the query to a single archive mirror
+    # (used to match an older deposit's annotation release).
+    seen = {}
+
+    def fake_fetch(_xml, _species, mirrors=t2g._BIOMART_MIRRORS):
+        seen["mirrors"] = mirrors
+        return ("Transcript stable ID\tGene stable ID\tGene name\nENSPANT1\tENSPANG1\tFOO\n", [])
+
+    monkeypatch.setattr(t2g, "_fetch_biomart_tsv", fake_fetch)
+    monkeypatch.setattr(
+        "src.orthologs.ensembl._species_field",
+        lambda _name, field: {"ensembl_dataset": "panubis_gene_ensembl"}[field],
+    )
+
+    host = "https://nov2020.archive.ensembl.org/biomart/martservice"
+    table = t2g.fetch_tx2gene("baboon", cache_dir=tmp_path, biomart_host=host)
+
+    assert seen["mirrors"] == (host,)
+    assert list(table.to_pandas()["transcript_id"]) == ["ENSPANT1"]
+
+
+def test_fetch_tx2gene_reads_archive_host_from_config(monkeypatch, tmp_path):
+    # When no host is passed, an optional tx2gene_biomart_host config
+    # field is honoured before falling back to the live mirrors.
+    seen = {}
+    fields = {
+        "ensembl_dataset": "panubis_gene_ensembl",
+        "tx2gene_biomart_host": "https://nov2020.archive.ensembl.org/biomart/martservice",
+    }
+
+    def fake_fetch(_xml, _species, mirrors=t2g._BIOMART_MIRRORS):
+        seen["mirrors"] = mirrors
+        return ("Transcript stable ID\tGene stable ID\tGene name\nENSPANT1\tENSPANG1\tFOO\n", [])
+
+    monkeypatch.setattr(t2g, "_fetch_biomart_tsv", fake_fetch)
+    monkeypatch.setattr("src.orthologs.ensembl._species_field", lambda _name, field: fields[field])
+
+    t2g.fetch_tx2gene("baboon", cache_dir=tmp_path)
+    assert seen["mirrors"] == (fields["tx2gene_biomart_host"],)
 
 
 def _tx2gene_table() -> pa.Table:

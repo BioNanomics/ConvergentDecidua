@@ -106,7 +106,11 @@ _BIOMART_READ_TIMEOUT = 180
 _BIOMART_HEARTBEAT_SECONDS = 5.0
 
 
-def _fetch_biomart_tsv(xml: str, species: str) -> tuple[str, list[str]]:
+def _fetch_biomart_tsv(
+    xml: str,
+    species: str,
+    mirrors: tuple[str, ...] = _BIOMART_MIRRORS,
+) -> tuple[str, list[str]]:
     """Download a BioMart TSV, streaming with progress + flaky reporting.
 
     Tries each mirror in turn. A mirror is considered *flaky* (but not
@@ -115,6 +119,10 @@ def _fetch_biomart_tsv(xml: str, species: str) -> tuple[str, list[str]]:
     next mirror is tried. While a healthy mirror streams data, a
     heartbeat is logged at most every ``_BIOMART_HEARTBEAT_SECONDS`` so
     a slow-but-alive transfer never looks hung.
+
+    ``mirrors`` overrides the default mirror list; pass a single-host
+    tuple (e.g. an Ensembl archive ``.../biomart/martservice``) to pin
+    the query to an annotation release that matches an older deposit.
 
     Returns
     -------
@@ -130,7 +138,7 @@ def _fetch_biomart_tsv(xml: str, species: str) -> tuple[str, list[str]]:
     import requests
 
     flaky: list[str] = []
-    for mirror_url in _BIOMART_MIRRORS:
+    for mirror_url in mirrors:
         start = time.monotonic()
         logger.info("Querying BioMart (%s) for %s tx2gene...", mirror_url, species)
         try:
@@ -251,7 +259,11 @@ def _group_chromosome_chunks(regions: list[str]) -> list[str]:
     return chunks
 
 
-def _fetch_chunk_with_retry(xml: str, label: str) -> tuple[str, list[str]]:
+def _fetch_chunk_with_retry(
+    xml: str,
+    label: str,
+    mirrors: tuple[str, ...] = _BIOMART_MIRRORS,
+) -> tuple[str, list[str]]:
     """Fetch one chunk, retrying with backoff if all mirrors blink out.
 
     Transient outages (the primary mirror flipping to a maintenance page
@@ -265,7 +277,7 @@ def _fetch_chunk_with_retry(xml: str, label: str) -> tuple[str, list[str]]:
     attempts = len(_CHUNK_RETRY_BACKOFF) + 1
     for attempt in range(1, attempts + 1):
         try:
-            text, chunk_flaky = _fetch_biomart_tsv(xml, label)
+            text, chunk_flaky = _fetch_biomart_tsv(xml, label, mirrors=mirrors)
             flaky.extend(chunk_flaky)
             return text, flaky
         except RuntimeError as exc:
@@ -286,7 +298,10 @@ def _fetch_chunk_with_retry(xml: str, label: str) -> tuple[str, list[str]]:
 
 
 def _fetch_tx2gene_chunked(
-    dataset: str, ensembl_species: str, species: str
+    dataset: str,
+    ensembl_species: str,
+    species: str,
+    mirrors: tuple[str, ...] = _BIOMART_MIRRORS,
 ) -> tuple[pa.Table, list[str]]:
     """Fetch a tx2gene table in per-chromosome chunks and concatenate.
 
@@ -313,7 +328,7 @@ def _fetch_tx2gene_chunked(
         )
         logger.info("  chunk %d/%d (%s) for %s", i, len(chunks), label, species)
         xml = _build_tx2gene_xml(dataset, chromosomes=chrom)
-        text, chunk_flaky = _fetch_chunk_with_retry(xml, f"{species}:{label}")
+        text, chunk_flaky = _fetch_chunk_with_retry(xml, f"{species}:{label}", mirrors=mirrors)
         flaky.extend(chunk_flaky)
         frames.append(_parse_tx2gene_tsv(text).to_pandas())
 
@@ -323,10 +338,21 @@ def _fetch_tx2gene_chunked(
     return table, flaky
 
 
+def _optional_species_field(species: str, field: str) -> str | None:
+    """Return an optional species-config field, or None if it is absent."""
+    from src.orthologs.ensembl import _species_field
+
+    try:
+        return _species_field(species, field)
+    except ValueError:
+        return None
+
+
 def fetch_tx2gene(
     species: str,
     cache_dir: Path | None = None,
     chunked: bool = False,
+    biomart_host: str | None = None,
 ) -> pa.Table:
     """Fetch a transcript→gene table for ``species`` from Ensembl BioMart.
 
@@ -344,6 +370,15 @@ def fetch_tx2gene(
         query exceeds BioMart's server-side proxy timeout. The chunks
         are concatenated and de-duplicated, so the result is identical
         to a successful single-shot fetch.
+    biomart_host : str, optional
+        A single BioMart ``.../biomart/martservice`` URL to query instead
+        of the live mirrors. Use an Ensembl archive host (e.g.
+        ``https://nov2020.archive.ensembl.org/biomart/martservice``) to
+        pin the mapping to an annotation release matching an older
+        deposit whose transcript IDs have since drifted out of the
+        current release. When omitted, an optional
+        ``tx2gene_biomart_host`` field on the species config is used,
+        and finally the default live mirrors.
 
     Returns
     -------
@@ -361,12 +396,18 @@ def fetch_tx2gene(
 
     dataset = _species_field(species, "ensembl_dataset")
 
+    if biomart_host is None:
+        biomart_host = _optional_species_field(species, "tx2gene_biomart_host")
+    mirrors = (biomart_host,) if biomart_host else _BIOMART_MIRRORS
+    if biomart_host:
+        logger.info("Pinning tx2gene(%s) to archive host %s", species, biomart_host)
+
     if chunked:
         ensembl_species = _species_field(species, "ensembl_species")
-        table, flaky = _fetch_tx2gene_chunked(dataset, ensembl_species, species)
+        table, flaky = _fetch_tx2gene_chunked(dataset, ensembl_species, species, mirrors=mirrors)
     else:
         xml = _build_tx2gene_xml(dataset)
-        text, flaky = _fetch_biomart_tsv(xml, species)
+        text, flaky = _fetch_biomart_tsv(xml, species, mirrors=mirrors)
         table = _parse_tx2gene_tsv(text)
 
     if flaky:

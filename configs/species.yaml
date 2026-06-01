@@ -64,6 +64,13 @@
   ensembl_prefix: panubis
   ensembl_species: papio_anubis
   gene_id_prefix: ENSPANG
+  # GSE155170 (2020 deposit) annotated baboon against an early Panubis1.0
+  # release; only 70.6% of its transcript IDs survive into release 112,
+  # silently dropping canonical markers (PRL, IGFBP1) during tx→gene
+  # rollup. Pin tx2gene to the nov2020 archive (release 102), which
+  # recovers 87.2% of the deposit's transcripts. Gene IDs (ENSPANG) are
+  # stable across releases, so the result still joins the r112 backbone.
+  tx2gene_biomart_host: https://nov2020.archive.ensembl.org/biomart/martservice
   menstruates: true
   spontaneous_decidualization: true
   tier: B
