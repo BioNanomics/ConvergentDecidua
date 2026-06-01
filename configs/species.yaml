@@ -33,6 +33,7 @@
   gene_id_prefix: ENSMUSG
   menstruates: false
   spontaneous_decidualization: false
+  clade: Rodentia
   tier: A
 
 # --- Tier B (Q4.2 phylogenetic expansion) ---
@@ -73,6 +74,7 @@
   tx2gene_biomart_host: https://nov2020.archive.ensembl.org/biomart/martservice
   menstruates: true
   spontaneous_decidualization: true
+  clade: Catarrhini
   tier: B
   source_datasets: [GSE155170]
 
@@ -97,6 +99,7 @@
                             # level and need tx2gene aggregation downstream
   menstruates: true
   spontaneous_decidualization: true
+  clade: Chiroptera
   tier: B
   source_datasets: [GSE155170]
   notes: |
@@ -141,6 +144,7 @@
   gene_id_prefix: ENSSTOG
   menstruates: false
   spontaneous_decidualization: false
+  clade: Rodentia
   tier: B
   source_datasets: [GSE155170]
 

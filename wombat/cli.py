@@ -879,6 +879,186 @@ def score_baseline_cmd(
         console.print(line)
 
 
+@cli.command("trait-contrast")
+@click.option("--min-module-genes", default=3, show_default=True, type=int)
+@click.option("--min-samples-per-arm", default=2, show_default=True, type=int)
+def trait_contrast_cmd(min_module_genes: int, min_samples_per_arm: int) -> None:
+    """Trait contrast (Q4.2): pseudobulk module amplitude in spontaneous
+    vs induced deciduators, across the GSE155170 gene-level bulk deposits.
+
+    CAVEAT: in this four-species subset the trait is perfectly confounded
+    with clade (catarrhine/bat vs rodent), so the contrast measures a
+    trait-or-clade difference, not a phylogeny-controlled trait effect.
+    """
+    from pathlib import Path
+
+    import anndata as ad
+    import pyarrow.parquet as pq
+
+    from src.scoring.trait_contrast import score_species_pseudobulk, trait_contrast
+    from wombat.config import load_config
+
+    project_root = Path(__file__).resolve().parent.parent
+    processed_dir = project_root / "results" / "processed"
+    orth_dir = project_root / "results" / "orthologs"
+
+    gene_h5ads = sorted(processed_dir.glob("*__gene.h5ad"))
+    if not gene_h5ads:
+        console.print(f"[red]No *__gene.h5ad files in {processed_dir}.[/red]")
+        raise SystemExit(1)
+
+    markers_cfg = load_config("markers")
+    gene_sets = markers_cfg.get("score_gene_sets") if isinstance(markers_cfg, dict) else None
+    if not gene_sets:
+        console.print("[red]No score_gene_sets in configs/markers.yaml.[/red]")
+        raise SystemExit(1)
+
+    species_cfg = {s["name"]: s for s in load_config("species")}
+
+    per_sample_frames: list = []
+    coverage_rows: list[dict[str, object]] = []
+    trait_by_species: dict[str, bool] = {}
+    clade_by_species: dict[str, str] = {}
+
+    for h5ad_path in gene_h5ads:
+        # Filename convention: <DATASET>__<species>__gene.h5ad
+        parts = h5ad_path.name.split("__")
+        species = parts[1] if len(parts) >= 3 else h5ad_path.stem
+        meta = species_cfg.get(species)
+        if meta is None or "spontaneous_decidualization" not in meta:
+            console.print(f"[yellow]  Skipping {species}: no trait label in species.yaml[/yellow]")
+            continue
+        trait_by_species[species] = bool(meta["spontaneous_decidualization"])
+        clade_by_species[species] = str(meta.get("clade", "?"))
+
+        per_species = orth_dir / f"backbone__human_{species}.parquet"
+        if per_species.exists():
+            backbone_df = pq.read_table(per_species).to_pandas()
+        else:
+            # Tier-A species (e.g. mouse) live in the main backbone.
+            full = pq.read_table(orth_dir / "backbone.parquet").to_pandas()
+            backbone_df = full[full["target_species"] == species].reset_index(drop=True)
+        if not len(backbone_df):
+            console.print(
+                f"[yellow]  No backbone rows for {species}; symbol-only mapping.[/yellow]"
+            )
+            backbone_df = None
+
+        console.print(f"[blue]Scoring {species} ({h5ad_path.name})...[/blue]")
+        adata = ad.read_h5ad(h5ad_path)
+        scored = score_species_pseudobulk(
+            adata,
+            gene_sets=gene_sets,
+            species=species,
+            backbone_df=backbone_df,
+            min_module_genes=min_module_genes,
+        )
+        per_sample_frames.append(scored)
+
+        cov = scored.drop_duplicates("score")[["score", "n_mapped", "n_by_id", "n_by_symbol"]]
+        for _, r in cov.iterrows():
+            coverage_rows.append(
+                {
+                    "species": species,
+                    "clade": clade_by_species[species],
+                    "trait_positive": trait_by_species[species],
+                    "score": r["score"],
+                    "n_mapped": int(r["n_mapped"]),
+                    "n_by_id": int(r["n_by_id"]),
+                    "n_by_symbol": int(r["n_by_symbol"]),
+                }
+            )
+
+    if not per_sample_frames:
+        console.print("[red]No species scored.[/red]")
+        raise SystemExit(1)
+
+    import pandas as pd
+
+    scores = pd.concat(per_sample_frames, ignore_index=True)
+    coverage = pd.DataFrame(coverage_rows)
+    contrast = trait_contrast(
+        scores, trait_by_species=trait_by_species, min_samples_per_arm=min_samples_per_arm
+    )
+
+    out_dir = project_root / "results" / "reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    scores_csv = out_dir / "trait_contrast_scores.csv"
+    coverage_csv = out_dir / "trait_contrast_coverage.csv"
+    contrast_csv = out_dir / "trait_contrast.csv"
+    md_path = out_dir / "trait_contrast.md"
+    scores.to_csv(scores_csv, index=False)
+    coverage.to_csv(coverage_csv, index=False)
+    contrast.to_csv(contrast_csv, index=False)
+
+    pos = sorted(s for s, t in trait_by_species.items() if t)
+    neg = sorted(s for s, t in trait_by_species.items() if not t)
+    pos_clades = sorted({clade_by_species[s] for s in pos})
+    neg_clades = sorted({clade_by_species[s] for s in neg})
+    confounded = not (set(pos_clades) & set(neg_clades))
+
+    with open(md_path, "w") as fh:
+        fh.write("# Trait contrast (Q4.2)\n\n")
+        fh.write(
+            "Does the conserved decidual program reach a **higher pseudobulk\n"
+            "amplitude** in species that decidualize spontaneously than in those\n"
+            "that require embryonic induction? Each module score is the mean\n"
+            "within-sample z-score (CPM-log1p) of its mapped genes; modules are\n"
+            "mapped from human symbols through the ortholog backbone with a\n"
+            "gene-symbol fallback (recovers markers whose gene IDs drifted between\n"
+            "annotation releases).\n\n"
+        )
+        fh.write(
+            f"- Trait-positive (spontaneous): "
+            f"{', '.join(f'{s} [{clade_by_species[s]}]' for s in pos)}\n"
+        )
+        fh.write(
+            f"- Trait-negative (induced): "
+            f"{', '.join(f'{s} [{clade_by_species[s]}]' for s in neg)}\n\n"
+        )
+        if confounded:
+            fh.write(
+                "> **Confound caveat.** In this subset the trait is perfectly\n"
+                f"> confounded with clade (positive={pos_clades}, "
+                f"negative={neg_clades}); the contrast cannot separate a trait\n"
+                "> effect from a clade effect. A phylogeny-controlled test needs a\n"
+                "> within-clade trait contrast (e.g. a trait-negative catarrhine or\n"
+                "> a trait-positive rodent) that the current data do not provide.\n\n"
+            )
+        fh.write("## Trait contrast (spontaneous − induced)\n\n")
+        fh.write(
+            "`delta_pos_minus_neg` > 0 and `fdr` < 0.05 ⇒ the module is more\n"
+            "strongly expressed in spontaneous deciduators.\n\n"
+        )
+        fh.write(contrast.to_markdown(index=False, floatfmt=".3f"))
+        fh.write("\n\n## Per-species module coverage\n\n")
+        fh.write(
+            "`n_by_symbol` > 0 marks genes recovered through the symbol fallback "
+            "after the gene-ID join missed them.\n\n"
+        )
+        cov_wide = coverage.pivot_table(
+            index="score", columns="species", values="n_mapped", aggfunc="first"
+        )
+        fh.write(cov_wide.to_markdown(floatfmt=".0f"))
+        fh.write("\n")
+
+    console.print(f"[green]✓ {scores_csv}[/green]")
+    console.print(f"[green]✓ {coverage_csv}[/green]")
+    console.print(f"[green]✓ {contrast_csv}[/green]")
+    console.print(f"[green]✓ {md_path}[/green]")
+    sig = contrast[(contrast["fdr"] < 0.05) & (contrast["delta_pos_minus_neg"] > 0)]
+    if len(sig):
+        console.print(
+            f"[green]{len(sig)} module(s) higher in spontaneous deciduators (FDR<0.05):[/green]"
+        )
+        for _, r in sig.iterrows():
+            console.print(
+                f"  - {r['score']}: Δ={r['delta_pos_minus_neg']:+.3f}, d={r['cohens_d']:+.2f}, FDR={r['fdr']:.3f}"
+            )
+    else:
+        console.print("[yellow]No module passed FDR<0.05 in the spontaneous direction.[/yellow]")
+
+
 # ---------------------------------------------------------------------------
 # Reports command
 # ---------------------------------------------------------------------------

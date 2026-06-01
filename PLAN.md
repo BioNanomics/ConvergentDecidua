@@ -746,13 +746,29 @@ datasets:**
   catarrhine-vs-rodent contrasts and (if tenrec menstruation status
   literature supports) afrotherian-vs-mouse contrast; `phylolm`
   becomes feasible at n=6 species.
-- [ ] New: `src/scoring/trait_contrast.py`.
-- [ ] **Tissue caveat.** GSE274701 is midgestation fetal-maternal
+- [x] New: `src/scoring/trait_contrast.py` — pseudobulk module-amplitude
+  trait contrast (Welch's t + Cohen's d + BH-FDR) with a symbol-fallback
+  ortholog mapper and one-to-many paralog collapse (most-expressed
+  representative per human gene). CLI `wombat trait-contrast`; tests in
+  `tests/test_trait_contrast.py`. Ran on the 4 GSE155170 gene-level
+  deposits (baboon, bat_carollia = spontaneous; ground_squirrel, mouse =
+  induced). **Result** (`results/reports/trait_contrast.md`): no module
+  is higher in spontaneous deciduators at FDR < 0.05. `decidual_score`
+  trends up (Δ=+0.24, d=+0.50, p=0.46 NS); progesterone/estrogen-response
+  modules are *higher* in the induced rodents. An early apparent
+  `decidual_score` signal (p=0.033) was a paralog-dilution artifact
+  (mouse one-to-many prolactin orthologs) that the representative-ortholog
+  collapse removed. **Confound:** in this 4-species subset trait is
+  perfectly confounded with clade (catarrhine/bat vs rodent), so this is
+  a trait-or-clade contrast, not a phylogeny-controlled test — documented
+  in the report; `phylolm` deferred until a within-clade trait contrast
+  exists.
+- [x] **Tissue caveat.** GSE274701 is midgestation fetal-maternal
   interface, not cycling endometrium. Q4.1's
   resting→decidualized priming distance does not extend directly;
   pseudobulk per-species "decidual program" amplitude (Q3.2-style)
-  is the correct readout. Document this in
-  `results/reports/baseline_priming.md` as a follow-up.
+  is the correct readout. Documented in
+  `results/reports/baseline_priming.md` ("Tissue caveat" section).
 
 #### Q4.2 trait-coverage gaps (surfaced by the 2026-05-27 ingest round)
 
